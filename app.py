@@ -1955,7 +1955,7 @@ def save_data(data):
                 INSERT INTO course_cache (id, courses, last_updated)
                 VALUES (1, %s::JSONB, %s)
                 ON CONFLICT (id) DO UPDATE SET courses=EXCLUDED.courses, last_updated=EXCLUDED.last_updated
-            """, (json.dumps(data["courses"], ensure_ascii=false), json.dumps({"ts": data.get("last_updated"), "scraper_updated": data.get("scraper_updated", {})})))
+            """, (json.dumps(data["courses"], ensure_ascii=False), json.dumps({"ts": data.get("last_updated"), "scraper_updated": data.get("scraper_updated", {})})))
             conn.commit()
             print(f"[PG] 課程資料已存入 Supabase ({len(data['courses'])} 筆)")
         except Exception as e:
