@@ -2513,7 +2513,7 @@ def _format_hours(h):
     try:
         n = float(s)
         return str(int(n)) if n == int(n) else str(n)
-    except (ＶalueＥrror, ＴypeＥrror):
+    except (ValueError, TypeError):
         return s
 
 
