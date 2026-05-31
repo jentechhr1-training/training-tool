@@ -4079,6 +4079,11 @@ function escHtml(s) {
 }
 
 async function buildEmail(mode) {
+  const _m = document.getElementById('empMonth').value.trim();
+  if (_m && (isNaN(_m) || +_m < 1 || +_m > 12)) {
+    toast('預訂月份請填 1–12 的數字', 'error');
+    return null;
+  }
   // 收集多位同仁(每人各自部門)
   const employees = Array.from(document.querySelectorAll('#empList .emp-row')).map(row => ({
     name: row.querySelector('.emp-name-input').value.trim(),
