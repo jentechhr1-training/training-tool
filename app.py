@@ -4035,13 +4035,25 @@ function toggleSel(id) {
   }
 }
 
+function clearSelected() {
+  if (selected.size === 0) return;
+  if (!confirm('確定清空所有已挑選的課程嗎？')) return;
+  selected.clear();
+  renderTable();
+  renderSelected();
+}
+
 function renderSelected() {
   const wrap = document.getElementById('selectedList');
   if (selected.size === 0) {
     wrap.innerHTML = '<div style="color:#999;text-align:center;padding:10px;">尚未挑選任何課程</div>';
     return;
   }
-  wrap.innerHTML = [...selected.values()].map((c, i) => `
+  const header = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 4px;">
+    <span style="font-weight:700;color:#2980d4;font-size:14px;">已挑選 ${selected.size} 門課程</span>
+    <button onclick="clearSelected()" onmouseover="this.style.background='#C44569';this.style.color='white';" onmouseout="this.style.background='white';this.style.color='#C44569';" style="background:white;border:1.5px solid #FFB8B8;color:#C44569;padding:6px 14px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;transition:all 0.15s;">🗑 清空全部</button>
+  </div>`;
+  wrap.innerHTML = header + [...selected.values()].map((c, i) => `
     <div class="sel-item">
       <div class="info">
         <b>${i+1}. ${escHtml(c.name)}</b>
