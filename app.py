@@ -25,9 +25,14 @@ import secrets
 import threading
 import time
 import webbrowser
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from functools import wraps
+
+# 台灣時區 (UTC+8;Render 伺服器是 UTC,不轉的話時間會少 8 小時)
+TW_TZ = timezone(timedelta(hours=8))
+def now_tw():
+    return datetime.now(TW_TZ)
 
 # === Supabase / PostgreSQL (commit 20a) ===
 try:
@@ -94,7 +99,7 @@ def log_activity(username, action, ip="", duration_seconds=None,
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 username, action,
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                now_tw().strftime("%Y-%m-%d %H:%M:%S"),
                 duration_seconds, scraper_code,
                 json.dumps(course_ids, ensure_ascii=False) if course_ids else None,
                 course_count, email_subject, ip
