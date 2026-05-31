@@ -3815,7 +3815,7 @@ async function updateOnly(code) {
     const data = await resp.json();
     if (data.ok) {
       toast(`✓ ${label} 更新完成! 共 ${data.count} 筆課程`, 'success');
-      await loadCourses();
+      await loadCourses(); await loadScrapers();      
     }
   } catch (e) {
     toast('更新失敗: ' + e.message, 'error');
@@ -3869,7 +3869,7 @@ async function startUpdate(forceRefresh = false) {
     const data = await resp.json();
     if (data.ok) {
       toast(`✓ 更新完成! 共 ${data.count} 筆課程${forceRefresh ? ' (強制全抓)' : ''}`, 'success');
-      await loadCourses();
+      await loadCourses(); await loadScrapers();     
     }
   } catch (e) {
     toast('更新失敗: ' + e.message, 'error');
