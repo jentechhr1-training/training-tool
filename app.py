@@ -2376,16 +2376,16 @@ def api_admin_stats():
         cur.execute("SELECT username, SUM(duration_seconds) as total_sec FROM activity_log WHERE action='logout' AND timestamp >= %s AND timestamp <= %s GROUP BY username ORDER BY total_sec DESC", (since, until))
         durations = [dict(r) for r in cur.fetchall()]
 
-        # 平均每月使用時長 (全部時間，不受區間影響)
-        CUR.EXECUTE("SELECT USERNAME, SUM(DURATION_SECONDS) AS TOTAL_SEC, COUNT(DISTINCT LEFT(TIMESTAMP,7)) AS MONTHS FROM ACTIVITY_LOG WHERE ACTION='LOGOUT' AND DURATION_SECONDS IS NOT NULL GROUP BY USERNAME")
-        MONTHLY_AVG = []
+# 平均每月使用時長 (全部時間，不受區間影響)
+        cur.execute("SELECT username, SUM(duration_seconds) as total_sec, COUNT(DISTINCT LEFT(timestamp,7)) as months FROM activity_log WHERE action='logout' AND duration_seconds IS NOT NULL GROUP BY username")
+        monthly_avg = []
         for _mr in cur.fetchall():
-            _MR = DICT(_MR)
-            _MONTHS = _MR.GET("MONTHS") OR 1
-            _TOTAL = _MR.GET("TOTAL_SEC") OR 0
-            _MR["AVG_MIN"] = ROUND(_TOTAL / _MONTHS / 60)
-            MONTHLY_AVG.APPEND(_MR)
-        MONTHLY_AVG.SORT(KEY=LAMBDA X: X["AVG_MIN"], REVERSE=TRUE)
+            _mr = dict(_mr)
+            _months = _mr.get("months") or 1
+            _total = _mr.get("total_sec") or 0
+            _mr["avg_min"] = round(_total / _months / 60)
+            monthly_avg.append(_mr)
+        monthly_avg.sort(key=lambda x: x["avg_min"], reverse=True)
 
         # 各協會更新次數
         cur.execute("SELECT username, scraper_code, COUNT(*) as cnt FROM activity_log WHERE action='update_scraper' AND timestamp >= %s AND timestamp <= %s GROUP BY username, scraper_code ORDER BY cnt DESC", (since, until))
