@@ -196,7 +196,7 @@ def init_db():
         if not cur.fetchone():
             cur.execute(
                 "INSERT INTO users (username, password, role, display_name, created_at) VALUES (?, ?, ?, ?, ?)",
-                (u["username"], u["password"], u["role"], u["display_name"], datetime.now().isoformat())
+                (u["username"], u["password"], u["role"], u["display_name"], now_tw().isoformat())
             )
     conn.commit()
     conn.close()
@@ -2034,7 +2034,7 @@ def update_courses(codes, force_refresh=False):
             try:
                 new_rows = [{**c, "_scraper_code": code} for c in scraper.scrape()]
                 all_courses.extend(new_rows)
-                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                now_str = now_tw().strftime("%Y-%m-%d %H:%M:%S")
                 # 增量儲存:每個協會跑完就先存一份,萬一後面爆掉至少保住前面
                 data = {"courses": all_courses, "last_updated": now_str}
                 # 記錄各協會個別更新時間
@@ -2059,7 +2059,7 @@ def update_courses(codes, force_refresh=False):
 
     # 把迴圈裡存好的 scraper_updated 讀回來,避免最後這次 save 把它洗成空的
     _final = load_data()
-    data = {"courses": all_courses, "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "scraper_updated": _final.get("scraper_updated", {})}
+    data = {"courses": all_courses, "last_updated": now_tw().strftime("%Y-%m-%d %H:%M:%S"), "scraper_updated": _final.get("scraper_updated", {})}
     save_data(data)
     return data
 
@@ -2287,7 +2287,7 @@ def api_add_user():
     try:
         cur = conn.cursor()
         cur.execute("INSERT INTO users (username, password, role, display_name, created_at) VALUES (%s, %s, 'user', %s, %s)",
-                    (username, password, display_name, datetime.now().isoformat()))
+                    (username, password, display_name, now_tw().isoformat()))
         conn.commit()
         return jsonify({"ok": True})
     except Exception as e:
@@ -2355,12 +2355,12 @@ def api_admin_stats():
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         if period == "today":
-            since = datetime.now().strftime("%Y-%m-%d") + " 00:00:00"
+            since = now_tw().strftime("%Y-%m-%d") + " 00:00:00"
         elif period == "month":
-            since = (datetime.now().replace(day=1)).strftime("%Y-%m-%d") + " 00:00:00"
+            since = (now_tw().replace(day=1)).strftime("%Y-%m-%d") + " 00:00:00"
         else:
             from datetime import timedelta
-            since = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
+            since = (now_tw() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
 
         # 登入次數
         cur.execute("SELECT username, COUNT(*) as cnt FROM activity_log WHERE action='login' AND timestamp >= %s GROUP BY username ORDER BY cnt DESC", (since,))
