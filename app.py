@@ -2940,9 +2940,9 @@ async function loadStats(period = 'week') {
   document.getElementById('statsNote').textContent = '載入中...';
   let _url = '/api/admin/stats?period=' + period;
   if (period === 'custom') {
-    const _s = document.getElementbyid('customstart').value;
-    const _e = document.getElementbyid('customend').value;
-    if (!_s) { document.getElementbyid('statsnote').textcontent = '⚠️ 請先選開始日期'; return; }
+    const _s = document.getElementById('customStart').value;
+    const _e = document.getElementById('customEnd').value;
+    if (!_s) { document.getElementById('statsNote').textContent = '⚠️ 請先選開始日期'; return; }
     _url += '&start=' + _s + '&end=' + _e;
   }
   const r = await fetch(_url);
