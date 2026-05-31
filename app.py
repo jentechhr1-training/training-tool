@@ -3582,7 +3582,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <div style="grid-column:1/-1;">
           <label>派訓同仁(可加多人,每人各自部門)</label>
           <div id="empList" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
-          <button type="button" onclick="addEmployee()" style="margin-top:8px;background:#E7F3FF;border:2px dashed #3F72AF;color:#3F72AF;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">➕ 新增同仁</button>
+          <button type="button" onclick="addEmployee()" onmouseover="this.style.background='#D4E9FF';this.style.borderColor='#2980d4';" onmouseout="this.style.background='#EBF5FF';this.style.borderColor='#7FB3E8';" style="margin-top:8px;background:#EBF5FF;border:2px dashed #7FB3E8;color:#2980d4;padding:10px 22px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;">➕ 新增同仁</button>
         </div>
         
       <div><label>預訂月份</label><input type="number" id="empMonth" placeholder="例: 5" min="1" max="12"></div>
@@ -3597,7 +3597,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     </div>
     
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
-      <button class="btn-primary" onclick="previewExternal()">👁️ 預覽並複製信件</button>
+      <button class="btn-primary" onclick="previewExternal()" style="font-size:16px;padding:14px 36px;">👁️ 預覽並複製信件</button>
     </div>
     <div class="info-line">
       信件含完整資訊:場次、主辦、日期(含星期)、時間、地點、班別、時數、費用、狀態、報名連結 — 按開課日升冪排序
@@ -4130,7 +4130,7 @@ function addEmployee(name = '', dept = '') {
   row.innerHTML = `
     <input type="text" class="emp-name-input" placeholder="姓名,例: 藍若僑" value="${escHtml(name)}" style="flex:1;">
     <input type="text" class="emp-dept-input" placeholder="部門,例: 訓練單位" value="${escHtml(dept)}" style="flex:1;">
-    <button type="button" onclick="removeEmployee(this)" style="background:#FFE5E5;border:none;color:#C44569;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:bold;flex-shrink:0;" title="刪除這位同仁">✕</button>
+    <button type="button" onclick="removeEmployee(this)" onmouseover="this.style.background='#C44569';this.style.color='white';" onmouseout="this.style.background='#FFE5E5';this.style.color='#C44569';" style="background:#FFE5E5;border:none;color:#C44569;width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:16px;font-weight:bold;flex-shrink:0;transition:all 0.2s;" title="刪除這位同仁">✕</button>
   `;
   list.appendChild(row);
 }
