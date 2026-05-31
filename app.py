@@ -4043,6 +4043,14 @@ function clearSelected() {
   renderSelected();
 }
 
+function clearSelected() {
+  if (selected.size === 0) return;
+  if (!confirm('確定清空所有已挑選的課程嗎？')) return;
+  selected.clear();
+  renderTable();
+  renderSelected();
+}
+
 function renderSelected() {
   const wrap = document.getElementById('selectedList');
   if (selected.size === 0) {
