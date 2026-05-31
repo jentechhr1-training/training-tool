@@ -2052,7 +2052,9 @@ def update_courses(codes, force_refresh=False):
         print(f"📅 Cutoff 過濾:{before_filter} → {after_filter} 筆 (-{CUTOFF_DAYS_PAST}d ~ +{CUTOFF_DAYS_FUTURE}d)")
     # ======================================================
 
-    data = {"courses": all_courses, "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+    # 把迴圈裡存好的 scraper_updated 讀回來,避免最後這次 save 把它洗成空的
+    _final = load_data()
+    data = {"courses": all_courses, "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "scraper_updated": _final.get("scraper_updated", {})}
     save_data(data)
     return data
 
