@@ -2379,7 +2379,7 @@ def api_admin_stats():
         # 平均每月使用時長 (全部時間，不受區間影響)
         CUR.EXECUTE("SELECT USERNAME, SUM(DURATION_SECONDS) AS TOTAL_SEC, COUNT(DISTINCT LEFT(TIMESTAMP,7)) AS MONTHS FROM ACTIVITY_LOG WHERE ACTION='LOGOUT' AND DURATION_SECONDS IS NOT NULL GROUP BY USERNAME")
         MONTHLY_AVG = []
-        FOR _MR IN CUR.FETCHALL():
+        for _mr in cur.fetchall():
             _MR = DICT(_MR)
             _MONTHS = _MR.GET("MONTHS") OR 1
             _TOTAL = _MR.GET("TOTAL_SEC") OR 0
