@@ -2976,7 +2976,7 @@ async function loadStats(period = 'week') {
   // 使用時長表
   const durRows = d.durations.map(r => {
     const mins = Math.round((r.total_sec || 0) / 60);
-    return `<tr><td>${r.username}</td><td style="text-align:center;">${mins} 分鐘</td></tr>`;
+    const _h=math.floor(mins/60),_m=mins%60; return `<tr><td>${r.username}</td><td style="text-align:center;">${_h>0?_h+' 小時 ':''}${_m} 分</td></tr>`;
   }).join('') || '<tr><td colspan="2" style="color:#999;text-align:center;">無資料</td></tr>';
 
   // 協會更新表
@@ -3002,7 +3002,13 @@ async function loadStats(period = 'week') {
   const catRows = (d.category_dist && d.category_dist.length) ? d.category_dist.map(r => `<tr><td>${r[0]}</td><td style="text-align:center;">${r[1]} 門</td></tr>`).join('') : '<tr><td colspan="2" style="color:#999;text-align:center;">無資料</td></tr>';
 
   document.getElementById('statsDashboard').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+    <div style="margin:0 0 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+      <div style="background:#EEF5FD;border-radius:10px;padding:14px 16px;"><div style="font-size:13px;color:#4A7BA7;">🔑 總登入</div><div style="font-size:24px;font-weight:800;color:#1a5fa8;margin-top:4px;">${d.login_counts.reduce((a,x)=>a+(+x.cnt||0),0)} 次</div></div>
+      <div style="background:#EEF5FD;border-radius:10px;padding:14px 16px;"><div style="font-size:13px;color:#4A7BA7;">⏱ 總使用時長</div><div style="font-size:24px;font-weight:800;color:#1a5fa8;margin-top:4px;">${(()=>{const s=d.durations.reduce((a,x)=>a+(+x.total_sec||0),0);const m=Math.round(s/60);const h=Math.floor(m/60);return (h>0?h+' 小時 ':'')+(m%60)+' 分';})()}</div></div>
+      <div style="background:#EEF5FD;border-radius:10px;padding:14px 16px;"><div style="font-size:13px;color:#4A7BA7;">📧 信件產出</div><div style="font-size:24px;font-weight:800;color:#1a5fa8;margin-top:4px;">${d.email_counts.reduce((a,x)=>a+(+x.cnt||0),0)} 封</div></div>
+      <div style="background:#EEF5FD;border-radius:10px;padding:14px 16px;"><div style="font-size:13px;color:#4A7BA7;">📚 派訓課程數</div><div style="font-size:24px;font-weight:800;color:#1a5fa8;margin-top:4px;">${d.email_counts.reduce((a,x)=>a+(+x.total_courses||0),0)} 門</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:16px;">
       <div>
         <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">🔑 登入次數</div>
         <table style="${tableStyle}">
@@ -3041,20 +3047,14 @@ async function loadStats(period = 'week') {
     </div>
     
     
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:16px;">
       <div>
         <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">🏢 協會分布 (派訓信件選用)</div>
-        <table style="${tableStyle}">
-          <tr><th style="${thStyle}">主辦單位</th><th style="${thStyle}">門數</th></tr>
-          ${instRows}
-        </table>
+        ${(()=>{const rows=d.institute_dist||[];if(!rows.length)return '<div style="color:#999;font-size:13px;padding:6px;">無資料</div>';const max=Math.max.apply(null,rows.map(r=>r[1]))||1;return rows.map(r=>{const pct=Math.round(r[1]/max*100);return '<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;"><span>'+r[0]+'</span><span style="color:#888;">'+r[1]+'</span></div><div style="height:8px;background:#E5EEF4;border-radius:4px;"><div style="height:100%;width:'+pct+'%;background:#3F72AF;border-radius:4px;"></div></div></div>';}).join('');})()}
       </div>
       <div>
         <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">🏷️ 課程類型分布</div>
-        <table style="${tableStyle}">
-          <tr><th style="${thStyle}">類型</th><th style="${thStyle}">門數</th></tr>
-          ${catRows}
-        </table>
+        ${(()=>{const rows=d.category_dist||[];if(!rows.length)return '<div style="color:#999;font-size:13px;padding:6px;">無資料</div>';const max=Math.max.apply(null,rows.map(r=>r[1]))||1;return rows.map(r=>{const pct=Math.round(r[1]/max*100);return '<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;"><span>'+r[0]+'</span><span style="color:#888;">'+r[1]+'</span></div><div style="height:8px;background:#E5EEF4;border-radius:4px;"><div style="height:100%;width:'+pct+'%;background:#3F72AF;border-radius:4px;"></div></div></div>';}).join('');})()}
       </div>
     </div>
     <div>
