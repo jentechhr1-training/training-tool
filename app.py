@@ -2376,7 +2376,18 @@ def api_admin_stats():
         cur.execute("SELECT username, SUM(duration_seconds) as total_sec FROM activity_log WHERE action='logout' AND timestamp >= %s AND timestamp <= %s GROUP BY username ORDER BY total_sec DESC", (since, until))
         durations = [dict(r) for r in cur.fetchall()]
 
-        # 協會更新次數
+        # 平均每月使用時長 (全部時間，不受區間影響)
+        CUR.EXECUTE("SELECT USERNAME, SUM(DURATION_SECONDS) AS TOTAL_SEC, COUNT(DISTINCT LEFT(TIMESTAMP,7)) AS MONTHS FROM ACTIVITY_LOG WHERE ACTION='LOGOUT' AND DURATION_SECONDS IS NOT NULL GROUP BY USERNAME")
+        MONTHLY_AVG = []
+        FOR _MR IN CUR.FETCHALL():
+            _MR = DICT(_MR)
+            _MONTHS = _MR.GET("MONTHS") OR 1
+            _TOTAL = _MR.GET("TOTAL_SEC") OR 0
+            _MR["AVG_MIN"] = ROUND(_TOTAL / _MONTHS / 60)
+            MONTHLY_AVG.APPEND(_MR)
+        MONTHLY_AVG.SORT(KEY=LAMBDA X: X["AVG_MIN"], REVERSE=TRUE)
+
+        # 各協會更新次數
         cur.execute("SELECT username, scraper_code, COUNT(*) as cnt FROM activity_log WHERE action='update_scraper' AND timestamp >= %s AND timestamp <= %s GROUP BY username, scraper_code ORDER BY cnt DESC", (since, until))
         scraper_counts = [dict(r) for r in cur.fetchall()]
 
@@ -2413,8 +2424,8 @@ def api_admin_stats():
 
         return jsonify({
             "ok": True, "period": period,
-            "login_counts": login_counts,
-            "durations": durations,
+            "login_counts": login_counts, "durations": durations,
+            "monthly_avg": monthly_avg,
             "scraper_counts": scraper_counts,
             "email_counts": email_counts,
             "top_courses": top_courses,
@@ -3018,6 +3029,13 @@ async function loadStats(period = 'week') {
         <table style="${tableStyle}">
           <tr><th style="${thStyle}">使用者</th><th style="${thStyle}">封數</th><th style="${thStyle}">總課程數</th></tr>
           ${emailRows}
+        </table>
+      </div>
+      <div>
+        <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">📅 平均每月使用時長</div>
+        <table style="${tableStyle}">
+          <tr><th style="${thStyle}">使用者</th><th style="${thStyle}">每月平均</th></tr>
+          ${(d.monthly_avg && d.monthly_avg.length) ? d.monthly_avg.map(r => { const _mm = r.avg_min||0; const _h = Math.floor(_mm/60), _m = _mm%60; return `<tr><td>${r.username}</td><td style="text-align:center;">${_h>0?_h+' 小時 ':''}${_m} 分 / 月</td></tr>`; }).join('') : `<tr><td colspan="2" style="color:#999;text-align:center;">無資料</td></tr>`}
         </table>
       </div>
     </div>
