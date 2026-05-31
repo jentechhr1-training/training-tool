@@ -2976,7 +2976,7 @@ async function loadStats(period = 'week') {
   // 使用時長表
   const durRows = d.durations.map(r => {
     const mins = Math.round((r.total_sec || 0) / 60);
-    const _h=math.floor(mins/60),_m=mins%60; return `<tr><td>${r.username}</td><td style="text-align:center;">${_h>0?_h+' 小時 ':''}${_m} 分</td></tr>`;
+    const _h=Math.floor(mins/60),_m=mins%60; return `<tr><td>${r.username}</td><td style="text-align:center;">${_h>0?_h+' 小時 ':''}${_m} 分</td></tr>`;
   }).join('') || '<tr><td colspan="2" style="color:#999;text-align:center;">無資料</td></tr>';
 
   // 協會更新表
