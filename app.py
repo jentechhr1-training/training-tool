@@ -2378,17 +2378,28 @@ def api_admin_stats():
         cur.execute("SELECT username, COUNT(*) as cnt, SUM(course_count) as total_courses FROM activity_log WHERE action='generate_email' AND timestamp >= %s GROUP BY username ORDER BY cnt DESC", (since,))
         email_counts = [dict(r) for r in cur.fetchall()]
 
-        # 熱門課程 (course_ids JSON 展開)
+        # 熱門課程 + 協會分布 + 課程類型分布 (course_ids JSON 展開)
+        id_to_course = {c.get("id"): c for c in load_data().get("courses", [])}
         cur.execute("SELECT course_ids FROM activity_log WHERE action='generate_email' AND timestamp >= %s AND course_ids IS NOT NULL", (since,))
         course_counter = {}
+        institute_counter = {}
+        category_counter = {}
         for row in cur.fetchall():
             try:
                 ids = json.loads(row["course_ids"])
                 for cid in ids:
                     course_counter[cid] = course_counter.get(cid, 0) + 1
+                    c = id_to_course.get(cid)
+                    if c:
+                        inst = c.get("institute") or "其他"
+                        cat = c.get("category") or "其他"
+                        institute_counter[inst] = institute_counter.get(inst, 0) + 1
+                        category_counter[cat] = category_counter.get(cat, 0) + 1
             except Exception:
                 pass
         top_courses = sorted(course_counter.items(), key=lambda x: x[1], reverse=True)[:10]
+        institute_dist = sorted(institute_counter.items(), key=lambda x: x[1], reverse=True)
+        category_dist = sorted(category_counter.items(), key=lambda x: x[1], reverse=True)
 
         # 最近活動記錄 (最新 20 筆)
         cur.execute("SELECT username, action, timestamp, scraper_code, course_count, email_subject FROM activity_log ORDER BY timestamp DESC LIMIT 20", )
@@ -2401,6 +2412,8 @@ def api_admin_stats():
             "scraper_counts": scraper_counts,
             "email_counts": email_counts,
             "top_courses": top_courses,
+            "institute_dist": institute_dist,
+            "category_dist": category_dist,
             "recent": recent,
         })
     except Exception as e:
@@ -2942,6 +2955,9 @@ async function loadStats(period = 'week') {
   const thStyle = 'background:linear-gradient(135deg,#2980d4,#4AAEE0);color:white;padding:10px 12px;text-align:left;font-weight:700;';
   const tdStyle = 'padding:9px 12px;border-bottom:1px solid rgba(74,144,217,0.1);';
 
+  const instRows = (d.institute_dist && d.institute_dist.length) ? d.institute_dist.map(r => `<tr><td>${r[0]}</td><td style="text-align:center;">${r[1]} 門</td></tr>`).join('') : '<tr><td colspan="2" style="color:#999;text-align:center;">無資料</td></tr>';
+  const catRows = (d.category_dist && d.category_dist.length) ? d.category_dist.map(r => `<tr><td>${r[0]}</td><td style="text-align:center;">${r[1]} 門</td></tr>`).join('') : '<tr><td colspan="2" style="color:#999;text-align:center;">無資料</td></tr>';
+
   document.getElementById('statsDashboard').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
       <div>
@@ -2970,6 +2986,22 @@ async function loadStats(period = 'week') {
         <table style="${tableStyle}">
           <tr><th style="${thStyle}">使用者</th><th style="${thStyle}">封數</th><th style="${thStyle}">總課程數</th></tr>
           ${emailRows}
+        </table>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div>
+        <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">🏢 協會分布 (派訓信件選用)</div>
+        <table style="${tableStyle}">
+          <tr><th style="${thStyle}">主辦單位</th><th style="${thStyle}">門數</th></tr>
+          ${instRows}
+        </table>
+      </div>
+      <div>
+        <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">🏷️ 課程類型分布</div>
+        <table style="${tableStyle}">
+          <tr><th style="${thStyle}">類型</th><th style="${thStyle}">門數</th></tr>
+          ${catRows}
         </table>
       </div>
     </div>
