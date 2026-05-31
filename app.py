@@ -2505,6 +2505,18 @@ def _format_date_with_weekday(date_str):
         return date_str
 
 
+def _format_hours(h):
+    """時數正規化:16.0 → 16,3.5 → 3.5。"""
+    s = str(h or "").strip()
+    if not s:
+        return ""
+    try:
+        n = float(s)
+        return str(int(n)) if n == int(n) else str(n)
+    except (valueerror, typeerror):
+        return s
+
+
 def _format_fee(fee):
     """費用顯示:免費類 → 「免費」;空/0 → 「—」;數字 → 「XXX 元」"""
     s = str(fee or "").strip()
@@ -2621,7 +2633,7 @@ def api_email():
             f'<td style="border:1px solid #BBB;">{_format_date_range(c)}</td>'
             f'<td style="border:1px solid #BBB;">{c.get("class_time","")}</td>'
             f'<td style="border:1px solid #BBB;">{c.get("location","").replace(chr(10), "<br>")}</td>'
-            f'<td style="text-align:center;border:1px solid #BBB;">{c.get("hours","")} 小時</td>'
+            f'<td style="text-align:center;border:1px solid #BBB;">{_format_hours(c.get("hours",""))} 小時</td>'
             f'<td style="text-align:right;border:1px solid #BBB;">{_format_fee(c.get("fee",""))}</td>'
             f'<td style="border:1px solid #BBB;">{link_html}</td></tr>'
         )
