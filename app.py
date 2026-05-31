@@ -2354,7 +2354,13 @@ def api_admin_stats():
         return jsonify({"ok": False, "error": "資料庫無連線"})
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        if period == "today":
+        until = "9999-12-31 23:59:59"
+        start = request.args.get("start", "").strip()
+        end = request.args.get("end", "").strip()
+        if period == "custom" and start:
+            since = start + " 00:00:00"
+            until = (end or start) + " 23:59:59"
+        elif period == "today":
             since = now_tw().strftime("%Y-%m-%d") + " 00:00:00"
         elif period == "month":
             since = (now_tw().replace(day=1)).strftime("%Y-%m-%d") + " 00:00:00"
@@ -2363,24 +2369,24 @@ def api_admin_stats():
             since = (now_tw() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
 
         # 登入次數
-        cur.execute("SELECT username, COUNT(*) as cnt FROM activity_log WHERE action='login' AND timestamp >= %s GROUP BY username ORDER BY cnt DESC", (since,))
+        cur.execute("SELECT username, COUNT(*) as cnt FROM activity_log WHERE action='login' AND timestamp >= %s AND timestamp <= %s GROUP BY username ORDER BY cnt DESC", (since, until))
         login_counts = [dict(r) for r in cur.fetchall()]
 
         # 使用時長 (logout duration_seconds 加總)
-        cur.execute("SELECT username, SUM(duration_seconds) as total_sec FROM activity_log WHERE action='logout' AND timestamp >= %s GROUP BY username ORDER BY total_sec DESC", (since,))
+        cur.execute("SELECT username, SUM(duration_seconds) as total_sec FROM activity_log WHERE action='logout' AND timestamp >= %s AND timestamp <= %s GROUP BY username ORDER BY total_sec DESC", (since, until))
         durations = [dict(r) for r in cur.fetchall()]
 
         # 協會更新次數
-        cur.execute("SELECT username, scraper_code, COUNT(*) as cnt FROM activity_log WHERE action='update_scraper' AND timestamp >= %s GROUP BY username, scraper_code ORDER BY cnt DESC", (since,))
+        cur.execute("SELECT username, scraper_code, COUNT(*) as cnt FROM activity_log WHERE action='update_scraper' AND timestamp >= %s AND timestamp <= %s GROUP BY username, scraper_code ORDER BY cnt DESC", (since, until))
         scraper_counts = [dict(r) for r in cur.fetchall()]
 
         # 信件產出
-        cur.execute("SELECT username, COUNT(*) as cnt, SUM(course_count) as total_courses FROM activity_log WHERE action='generate_email' AND timestamp >= %s GROUP BY username ORDER BY cnt DESC", (since,))
+        cur.execute("SELECT username, COUNT(*) as cnt, SUM(course_count) as total_courses FROM activity_log WHERE action='generate_email' AND timestamp >= %s AND timestamp <= %s GROUP BY username ORDER BY cnt DESC", (since, until))
         email_counts = [dict(r) for r in cur.fetchall()]
 
         # 熱門課程 + 協會分布 + 課程類型分布 (course_ids JSON 展開)
         id_to_course = {c.get("id"): c for c in load_data().get("courses", [])}
-        cur.execute("SELECT course_ids FROM activity_log WHERE action='generate_email' AND timestamp >= %s AND course_ids IS NOT NULL", (since,))
+        cur.execute("SELECT course_ids FROM activity_log WHERE action='generate_email' AND timestamp >= %s AND timestamp <= %s AND course_ids IS NOT NULL", (since, until))
         course_counter = {}
         institute_counter = {}
         category_counter = {}
@@ -2741,7 +2747,14 @@ input:focus { outline: none; border-color: #4A90D9; box-shadow: 0 0 0 3px rgba(7
       <button class="btn" onclick="loadStats('month')" id="btnMonth" style="background:#E5EEF4;color:#3F72AF;">本月</button>
       <span id="statsNote" style="font-size:12px;color:#999;margin-left:8px;align-self:center;"></span>
     </div>
-    <div id="statsDashboard">載入中...</div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:16px;flex-wrap:wrap;background:#F8FBFD;padding:10px 12px;border-radius:10px;">
+      <span style="font-size:13px;color:#3F72AF;font-weight:700;">📅 自訂區間</span>
+      <input type="date" id="customStart" style="padding:6px 10px;border:1.5px solid rgba(74,144,217,0.3);border-radius:8px;font-family:inherit;font-size:13px;">
+      <span style="color:#888;">~</span>
+      <input type="date" id="customEnd" style="padding:6px 10px;border:1.5px solid rgba(74,144,217,0.3);border-radius:8px;font-family:inherit;font-size:13px;">
+      <button class="btn btn-blue" onclick="loadStats('custom')">查詢</button>
+    </div>
+    <div id="statsDashboard">載入中</div>
   </div>
 
   </div><!-- end panel-stats -->
@@ -2925,14 +2938,21 @@ async function loadStats(period = 'week') {
     btn.style.color = p === period ? 'white' : '#3F72AF';
   });
   document.getElementById('statsNote').textContent = '載入中...';
-  const r = await fetch('/api/admin/stats?period=' + period);
+  let _url = '/api/admin/stats?period=' + period;
+  if (period === 'custom') {
+    const _s = document.getelementbyid('customstart').value;
+    const _e = document.getelementbyid('customend').value;
+    if (!_s) { document.getelementbyid('statsnote').textcontent = '⚠️ 請先選開始日期'; return; }
+    _url += '&start=' + _s + '&end=' + _e;
+  }
+  const r = await fetch(_url);
   const d = await r.json();
   if (!d.ok) {
     document.getElementById('statsDashboard').innerHTML = `<div style="color:#C44569;padding:12px;">⚠️ ${d.error}</div>`;
     document.getElementById('statsNote').textContent = '';
     return;
   }
-  const periodLabel = {today:'今日',week:'本週',month:'本月'}[period];
+  const periodLabel = {today:'今日',week:'本週',month:'本月',custom:'自訂區間'}[period];
   document.getElementById('statsNote').textContent = `顯示${periodLabel}資料`;
 
   const scraperResp = await fetch('/api/scrapers');
