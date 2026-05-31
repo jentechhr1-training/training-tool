@@ -3254,11 +3254,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   /* === Table === */
   .filter-bar {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr;
-    gap: 8px; margin-bottom: 16px;
+    grid-template-columns: 2fr 1.5fr 1fr 1fr;
+    gap: 10px; margin-bottom: 16px;
     background: rgba(255,255,255,0.6);
     border-radius: 16px;
-    padding: 12px 14px;
+    padding: 14px 16px;
     border: 1px solid rgba(255,255,255,0.8);
     box-shadow: 0 2px 12px rgba(26,95,168,0.08);
   }
@@ -3448,19 +3448,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     </div>
     <div class="info-line" id="lastUpdate">尚未抓取</div>
     
-    <details>
-      <summary>⚙️ 自動更新設定 (進階)</summary>
-      <div style="margin-top:10px; padding:12px; background:var(--paper); border-radius:10px;">
-        <div class="setting-row">
-          <div>
-            <div style="font-weight:600;">啟用自動更新</div>
-            <div class="info-line">每天指定時間自動抓取所有協會的課程資料</div>
-          </div>
-          <div class="toggle-switch" id="autoUpdateToggle" onclick="alert('自動更新功能將於下版開放\\n屆時可設定每天 / 每週的自動抓取時間')"></div>
-        </div>
-
-      </div>
-    </details>
+    
   </div>
 
   <!-- ② 篩選並挑選 -->
