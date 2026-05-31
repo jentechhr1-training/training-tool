@@ -1932,7 +1932,9 @@ def load_data():
                         scraper_updated = lu_obj.get("scraper_updated", {})
                 except Exception:
                     pass
-                return {"courses": row["courses"], "last_updated": ts, "scraper_updated": scraper_updated}
+                raw = row["courses"]
+                courses = raw if isinstance(raw, list) else (raw.get("courses", []) if isinstance(raw, dict) else [])
+                return {"courses": courses, "last_updated": ts, "scraper_updated": scraper_updated}
         except Exception as e:
             print(f"[PG] load_data 失敗: {e}")
         finally:
