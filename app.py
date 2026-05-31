@@ -3598,6 +3598,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
       <button class="btn-primary" onclick="previewExternal()" style="font-size:16px;padding:14px 36px;">👁️ 預覽並複製信件</button>
+      <button class="btn-secondary" onclick="clearForm()" style="font-size:15px;padding:14px 28px;">🧹 清空表單</button>
     </div>
     <div class="info-line">
       信件含完整資訊:場次、主辦、日期(含星期)、時間、地點、班別、時數、費用、狀態、報名連結 — 按開課日升冪排序
@@ -4043,12 +4044,16 @@ function clearSelected() {
   renderSelected();
 }
 
-function clearSelected() {
-  if (selected.size === 0) return;
-  if (!confirm('確定清空所有已挑選的課程嗎？')) return;
+function clearForm() {
+  if (!confirm('確定清空表單嗎？(同仁、月份、課程名稱、已挑選課程都會清掉)')) return;
+  document.getElementById('empList').innerHTML = '';
+  addEmployee();
+  document.getElementById('empMonth').value = '';
+  document.getElementById('courseName').value = '';
   selected.clear();
   renderTable();
   renderSelected();
+  toast('表單已清空', 'success');
 }
 
 function renderSelected() {
