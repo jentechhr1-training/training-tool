@@ -2989,22 +2989,8 @@ async function loadStats(period = 'week') {
         </table>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-      <div>
-        <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">🏢 協會分布 (派訓信件選用)</div>
-        <table style="${tableStyle}">
-          <tr><th style="${thStyle}">主辦單位</th><th style="${thStyle}">門數</th></tr>
-          ${instRows}
-        </table>
-      </div>
-      <div>
-        <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">🏷️ 課程類型分布</div>
-        <table style="${tableStyle}">
-          <tr><th style="${thStyle}">類型</th><th style="${thStyle}">門數</th></tr>
-          ${catRows}
-        </table>
-      </div>
-    </div>
+    
+    
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
       <div>
         <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">🏢 協會分布 (派訓信件選用)</div>
