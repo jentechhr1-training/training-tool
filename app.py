@@ -2328,6 +2328,38 @@ def api_delete_user():
     return jsonify({"ok": True})
 
 
+@app.route("/api/admin/change_role", methods=["POST"])
+@login_required
+def api_change_role():
+    if session["user"]["role"] != "admin":
+        return jsonify({"ok": False, "error": "無權限"}), 403
+    body = request.get_json() or {}
+    target = body.get("username", "").strip()
+    new_role = body.get("role", "").strip()
+    if new_role not in ("admin", "user"):
+        return jsonify({"ok": False, "error": "角色參數錯誤"})
+    if not target:
+        return jsonify({"ok": False, "error": "請指定帳號"})
+    if target == "train0" and new_role != "admin":
+        return jsonify({"ok": False, "error": "不能變更主管理員 train0 的權限"})
+    conn = _pg_conn()
+    if not conn:
+        return jsonify({"ok": False, "error": "資料庫無連線"})
+    try:
+        cur = conn.cursor()
+        if new_role == "user":
+            cur.execute("SELECT COUNT(*) FROM users WHERE role='admin'")
+            if (cur.fetchone()[0] or 0) <= 1:
+                return jsonify({"ok": False, "error": "至少需保留一位管理員"})
+        cur.execute("UPDATE users SET role=%s WHERE username=%s", (new_role, target))
+        conn.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+    finally:
+        conn.close()
+
+
 @app.route("/api/admin/force_logout", methods=["POST"])
 @login_required
 def api_force_logout():
@@ -2864,14 +2896,23 @@ async function loadUsers() {
         <button class="btn btn-blue" onclick="changePw('${u.username}')">改密碼</button>
         <span class="msg" id="pwMsg_${u.username}"></span>
       </div>
+      ${u.username !== 'train0' ? (u.role === 'admin' ? `<button class="btn btn-orange" onclick="changeRole('${u.username}','user','${u.display_name}')">改為一般</button>` : `<button class="btn btn-blue" onclick="changeRole('${u.username}','admin','${u.display_name}')">設為管理員</button>`) : ''}
       ${u.role !== 'admin' ? `<button class="btn btn-red" onclick="deleteUser('${u.username}', '${u.display_name}')">🗑 刪除</button>` : ''}
     </div>
   `).join('');
-  // 套用在線狀態
+  // 套用在線狀態 + 角色切換功能
   document.querySelectorAll('.online-indicator').forEach(el => {
     const u = el.dataset.username;
     el.className = 'online-dot online-indicator' + (onlineUsernames.has(u) ? ' on' : '');
   });
+}
+
+async function changeRole(username, role, displayName) {
+  const verb = role === 'admin' ? '設為管理員' : '改為一般使用者';
+  if (!confirm('確定要把「' + displayName + '」' + verb + ' 嗎?\n\n變更後對方需重新登入才會生效。')) return;
+  const _r = await fetch('/api/admin/change_role', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username: username, role: role}) });
+  const _d = await _r.json();
+  if (_d.ok) { alert('✓ 已變更權限,對方重新登入後生效'); loadUsers(); } else { alert('✗ ' + _d.error); }
 }
 
 
