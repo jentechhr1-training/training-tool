@@ -3913,9 +3913,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="複訓" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> 複訓</label>
           <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="初訓" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> 初訓</label>
           <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="輻射" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> 輻射</label>
-          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="3小時輻射繼續教育積分班" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 3小時積分班</label>
-          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="18小時輻射操作人員訓練班" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 18小時訓練班</label>
-          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="36小時輻射操作人員訓練班" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 36小時訓練班</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="3小時" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 3小時積分班</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="18小時" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 18小時訓練班</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="36小時" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 36小時訓練班</label>
         </div>
       </div>
       <select id="filterNationality" onchange="renderTable()">
@@ -4360,7 +4360,7 @@ function renderTable() {
   }
   if (selectedCategories.length > 0) {
       visible = visible.filter(c => 
-        selectedCategories.includes(c.category) || selectedCategories.includes(c.name)
+        selectedCategories.some(sel => c.category === sel || (c.name && c.name.includes(sel)))
       );
     }
   if (nat) visible = visible.filter(c => c.nationality === nat);
