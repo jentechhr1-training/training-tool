@@ -2115,7 +2115,6 @@ SCRAPERS = {    "ticsha": TichaScraper,
     "isha": ISHAScraper,
     "cshm": CSHMScraper,
     "tete": TeteScraper,
-    "hwahsing": HwahsingScraper,
 }
 
 def load_data():
@@ -2670,6 +2669,47 @@ def api_admin_stats():
         conn.close()
 
 
+@app.route("/api/admin/import_hwahsing", methods=["POST"])
+@login_required
+def api_import_hwahsing():
+    if session["user"]["role"] != "admin":
+        return jsonify({"ok": False, "error": "無權限"}), 403
+    body = request.get_json() or {}
+    sources = [
+        (body.get("htmlce", ""), "hwahsing_ce_", HwahsingScraper._parse_continuing),
+        (body.get("html18", ""), "hwahsing_18h_", HwahsingScraper._parse_18h),
+        (body.get("html36", ""), "hwahsing_36h_", HwahsingScraper._parse_36h),
+    ]
+    if not any((s[0] or "").strip() for s in sources):
+        return jsonify({"ok": False, "error": "請至少貼上一頁的原始碼"})
+    try:
+        data = load_data()
+        courses = data.get("courses", [])
+        total_new = 0
+        for html, prefix, parser in sources:
+            html = (html or "").strip()
+            if not html:
+                continue
+            new_rows = parser(html)
+            courses = [c for c in courses if not c.get("id", "").startswith(prefix)]
+            for c in new_rows:
+                c["_scraper_code"] = "hwahsing"
+                if _is_in_cutoff_range(c):
+                    courses.append(c)
+                    total_new += 1
+        now_str = now_tw().strftime("%Y-%m-%d %H:%M:%S")
+        su = data.get("scraper_updated", {})
+        su["hwahsing"] = now_str
+        save_data({"courses": courses, "last_updated": now_str, "scraper_updated": su})
+        log_activity(session["user"]["username"], "import_hwahsing",
+                     ip=request.remote_addr or "?", course_count=total_new)
+        return jsonify({"ok": True, "count": total_new})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"ok": False, "error": str(e)})
+
+
 @app.route("/api/admin/online_detail")
 @login_required
 def api_online_detail():
@@ -2977,6 +3017,7 @@ input:focus { outline: none; border-color: #4A90D9; box-shadow: 0 0 0 3px rgba(7
     <button class="tab-btn active" id="tab-stats" onclick="switchTab('stats')">📊 使用統計</button>
     <button class="tab-btn" id="tab-online" onclick="switchTab('online')">🟢 在線狀態</button>
     <button class="tab-btn" id="tab-users" onclick="switchTab('users')">👥 使用者管理</button>
+    <button class="tab-btn" id="tab-hwahsing" onclick="switchTab('hwahsing')">📥 華新匯入</button>
   </div>
 
   <!-- 統計儀表板 -->
@@ -3025,6 +3066,31 @@ input:focus { outline: none; border-color: #4A90D9; box-shadow: 0 0 0 3px rgba(7
   </div>
 
 </div><!-- end panel-users -->
+
+  <!-- 華新匯入 -->
+  <div id="panel-hwahsing" class="tab-panel" style="display:none;">
+  <div class="card">
+    <h2>📥 華新課程匯入（手動貼上）</h2>
+    <div style="background:#FFF3CD;border:1.5px solid #F4B860;border-radius:10px;padding:12px 16px;font-size:13px;color:#856404;line-height:1.7;margin-bottom:16px;">
+      華新網站會擋海外伺服器，無法自動抓取。請從<b>台灣的瀏覽器</b>打開下面三頁，各按 <b>Ctrl+A → Ctrl+C</b> 複製整頁，貼到對應欄位後按「匯入」。<br>
+      只更新某一頁時，<b>只貼那一頁即可</b>（沒貼的欄位會保留原本資料）。約一個月貼一次。
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-weight:700;">① 繼續教育（3/6小時）<a href="https://www.hwahsing.com.tw/class02.htm" target="_blank" style="font-size:12px;margin-left:6px;">開啟頁面 ↗</a></label>
+      <textarea id="hwHtmlCe" placeholder="貼上 class02.htm 整頁原始碼" style="width:100%;height:90px;margin-top:6px;border:1.5px solid rgba(74,144,217,0.3);border-radius:10px;padding:10px;font-family:monospace;font-size:12px;"></textarea>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-weight:700;">② 18小時初訓 <a href="https://www.hwahsing.com.tw/class01.htm" target="_blank" style="font-size:12px;margin-left:6px;">開啟頁面 ↗</a></label>
+      <textarea id="hwHtml18" placeholder="貼上 class01.htm 整頁原始碼" style="width:100%;height:90px;margin-top:6px;border:1.5px solid rgba(74,144,217,0.3);border-radius:10px;padding:10px;font-family:monospace;font-size:12px;"></textarea>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-weight:700;">③ 36小時初訓 <a href="https://www.hwahsing.com.tw/class03.htm" target="_blank" style="font-size:12px;margin-left:6px;">開啟頁面 ↗</a></label>
+      <textarea id="hwHtml36" placeholder="貼上 class03.htm 整頁原始碼（目前多為台中場，北部可能無資料）" style="width:100%;height:90px;margin-top:6px;border:1.5px solid rgba(74,144,217,0.3);border-radius:10px;padding:10px;font-family:monospace;font-size:12px;"></textarea>
+    </div>
+    <button class="btn btn-blue" onclick="importHwahsing()" style="font-size:14px;padding:10px 24px;">📥 匯入</button>
+    <span class="msg" id="hwImportMsg" style="margin-left:10px;"></span>
+  </div>
+  </div><!-- end panel-hwahsing -->
 
 </div>
 <script>
@@ -3305,6 +3371,26 @@ async function loadStats(period = 'week') {
       </table>
     </div>
   `;
+}
+
+async function importHwahsing() {
+  const msg = document.getElementById('hwImportMsg');
+  const htmlce = document.getElementById('hwHtmlCe').value;
+  const html18 = document.getElementById('hwHtml18').value;
+  const html36 = document.getElementById('hwHtml36').value;
+  if (!htmlce.trim() && !html18.trim() && !html36.trim()) {
+    msg.textContent = '請至少貼上一頁'; msg.className = 'msg err'; return;
+  }
+  msg.textContent = '匯入中...'; msg.className = 'msg';
+  try {
+    const r = await fetch('/api/admin/import_hwahsing', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({htmlce, html18, html36})
+    });
+    const d = await r.json();
+    if (d.ok) { msg.textContent = '✓ 匯入成功，本次 ' + d.count + ' 筆'; msg.className = 'msg ok'; }
+    else { msg.textContent = '✗ ' + d.error; msg.className = 'msg err'; }
+  } catch (e) { msg.textContent = '✗ ' + e.message; msg.className = 'msg err'; }
 }
 
 loadStats('week');
