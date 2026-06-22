@@ -1944,11 +1944,178 @@ class TeteScraper:
         return courses
 
 
+class HwahsingScraper:
+    name = "華新輻射防護偵測股份有限公司"
+    code = "hwahsing"
+    desc = "北部地區（台北・桃園・竹科），輻射類課程"
+    base_url = "https://www.hwahsing.com.tw"
+    form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeJSgsNOPBMafsUGM256yl5BzeiLKOI0ZxxMetw0YsyycGdOg/viewform"
+    _progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
+    NORTH_KEYWORDS = ("台北", "桃園", "竹科", "新竹")
+
+    @classmethod
+    def get_progress(cls):
+        return cls._progress.copy()
+
+    @classmethod
+    def _roc_to_west(cls, s):
+        m = re.search(r"(\d{2,3})年\s*(\d{1,2})月\s*(\d{1,2})日", s)
+        if not m:
+            return ""
+        y, mo, d = m.groups()
+        return f"{int(y)+1911:04d}-{int(mo):02d}-{int(d):02d}"
+
+    @classmethod
+    def _md_to_west(cls, s):
+        m = re.search(r"(\d{1,2})/(\d{1,2})", s)
+        if not m:
+            return ""
+        return f"{now_tw().year:04d}-{int(m.group(1)):02d}-{int(m.group(2)):02d}"
+
+    @classmethod
+    def _is_north(cls, text):
+        return any(k in text for k in cls.NORTH_KEYWORDS)
+
+    @classmethod
+    def _branch_of(cls, text):
+        for kw, br in (("台北", "台北"), ("桃園", "桃園"), ("竹科", "新竹"), ("新竹", "新竹"),
+                       ("中科", "中科"), ("台中", "台中"), ("南科", "南科"), ("台南", "台南"), ("高雄", "高雄")):
+            if kw in text:
+                return br
+        return text
+
+    @classmethod
+    def _mk(cls, **kw):
+        base = {"institute": cls.name, "code": cls.code, "category": "輻射",
+                "nationality": "本國籍", "register_url": cls.form_url, "source": cls.code}
+        base.update(kw)
+        return base
+
+    @classmethod
+    def _parse_continuing(cls, html):
+        soup = BeautifulSoup(html, "html.parser")
+        courses = []
+        for table in soup.select("table.schedule-table"):
+            for tr in (table.select("tbody tr") or table.find_all("tr")):
+                tds = tr.find_all("td")
+                if len(tds) < 4:
+                    continue
+                batch = tds[0].get_text(strip=True)
+                if not re.match(r"第[A-Za-z]?\d+梯", batch):
+                    continue
+                start_date = cls._roc_to_west(tds[1].get_text(strip=True))
+                loc_span = tds[2].find("span", class_="address-tip")
+                loc_text = tds[2].get_text(strip=True)
+                full_addr = loc_span.get("data-address", "").strip() if loc_span else ""
+                if not cls._is_north(loc_text + " " + full_addr):
+                    continue
+                status = "已結訓" if "結訓" in tds[3].get_text(strip=True) else "確定開班"
+                class_type = "假日班" if re.match(r"第A\d+梯", batch) else "平日班"
+                branch = cls._branch_of(loc_text)
+                for sess, sname, sh, sf, st in [
+                    ("am", "3小時輻防繼續教育(換照積分)", 3, 1000, "上午 09:00-12:00"),
+                    ("pm", "3小時輻防繼續教育(換照積分)", 3, 1000, "下午 13:00-16:00"),
+                    ("full", "6小時輻防繼續教育(換照積分)", 6, 1700, "全天 09:00-16:00"),
+                ]:
+                    courses.append(cls._mk(
+                        id=f"hwahsing_ce_{start_date}_{class_type}_{sess}",
+                        name=sname, branch=branch, class_type=class_type, class_time=st,
+                        start_date=start_date, end_date=start_date, hours=sh, fee=sf,
+                        status=status, location=full_addr or loc_text))
+        return courses
+
+    @classmethod
+    def _parse_18h(cls, html):
+        soup = BeautifulSoup(html, "html.parser")
+        courses = []
+        for card in soup.select(".city-card"):
+            title_el = card.select_one(".city-title")
+            venue_el = card.select_one(".venue-box")
+            city_title = title_el.get_text(strip=True) if title_el else ""
+            if not cls._is_north(city_title):
+                continue
+            branch = cls._branch_of(city_title)
+            venue = venue_el.get_text(" ", strip=True) if venue_el else ""
+            table = card.select_one("table.schedule-table")
+            if not table:
+                continue
+            for tr in (table.select("tbody tr") or table.find_all("tr")):
+                tds = tr.find_all("td")
+                if len(tds) < 4:
+                    continue
+                type_text = tds[0].get_text(strip=True)
+                if "平日" not in type_text and "假日" not in type_text:
+                    continue
+                class_type = "假日班" if "假日" in type_text else "平日班"
+                parts = [p for p in re.split(r"[、,]", tds[1].get_text(strip=True)) if p.strip()]
+                start_date = cls._md_to_west(parts[0]) if parts else ""
+                end_date = cls._md_to_west(parts[-1]) if parts else start_date
+                status = "已額滿" if "額滿" in tds[3].get_text(strip=True) else "確定開班"
+                courses.append(cls._mk(
+                    id=f"hwahsing_18h_{branch}_{start_date}",
+                    name="18小時輻射操作人員訓練班(初訓)", branch=branch,
+                    class_type=class_type, class_time=tds[2].get_text(strip=True),
+                    start_date=start_date, end_date=end_date, hours=18, fee=5500,
+                    status=status, location=venue))
+        return courses
+
+    @classmethod
+    def _parse_36h(cls, html):
+        soup = BeautifulSoup(html, "html.parser")
+        courses = []
+        addr_el = soup.select_one(".location-premium-card .address-box")
+        default_addr = addr_el.get_text(" ", strip=True).replace("地址：", "").strip() if addr_el else ""
+        for table in soup.select("table.clean-table"):
+            for tr in (table.select("tbody tr") or table.find_all("tr")):
+                tds = tr.find_all("td")
+                if len(tds) < 4 or "梯" not in tds[0].get_text(strip=True):
+                    continue
+                place = tds[3].get_text(strip=True)
+                if not cls._is_north(place):
+                    continue
+                parts = [p for p in re.split(r"[、,]", tds[1].get_text(strip=True)) if p.strip()]
+                start_date = cls._md_to_west(parts[0]) if parts else ""
+                end_date = cls._md_to_west(parts[-1]) if parts else start_date
+                courses.append(cls._mk(
+                    id=f"hwahsing_36h_{cls._branch_of(place)}_{start_date}",
+                    name="36小時輻射操作人員訓練班(初訓)", branch=cls._branch_of(place),
+                    class_type="平日班", class_time="08:30-18:00",
+                    start_date=start_date, end_date=end_date, hours=36, fee=10000,
+                    status="確定開班", location=default_addr))
+        return courses
+
+    @classmethod
+    def scrape(cls, fetch_details=True):
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"}
+        pages = [
+            ("18小時初訓", f"{cls.base_url}/class01.htm", cls._parse_18h),
+            ("繼續教育", f"{cls.base_url}/class02.htm", cls._parse_continuing),
+            ("36小時初訓", f"{cls.base_url}/class03.htm", cls._parse_36h),
+        ]
+        all_courses = []
+        cls._progress = {"stage": "list", "current": 0, "total": len(pages), "message": "華新 載入..."}
+        for i, (label, url, parser) in enumerate(pages):
+            cls._progress["current"] = i + 1
+            cls._progress["message"] = f"華新 抓取 {label}..."
+            try:
+                r = requests.get(url, headers=headers, timeout=20)
+                r.encoding = "utf-8"
+                rows = parser(r.text)
+                all_courses.extend(rows)
+                print(f"  [Hwahsing] {label}: {len(rows)} 筆")
+            except Exception as e:
+                print(f"  [Hwahsing] {label} 失敗: {e}")
+        cls._progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
+        print(f"  [Hwahsing] 完成，共 {len(all_courses)} 筆")
+        return all_courses
+
+
 SCRAPERS = {    "ticsha": TichaScraper,
     "cpc": CPCScraper,
     "isha": ISHAScraper,
     "cshm": CSHMScraper,
     "tete": TeteScraper,
+    "hwahsing": HwahsingScraper,
 }
 
 def load_data():
@@ -3383,7 +3550,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   .inst-card .desc { font-size: 11px; color: #4A6080; }
 
   /* 未勾選：淡化 */
-  #instTicsha, #instCpc, #instIsha, #instCshm, #instTete { opacity: 0.7; }
+  #instTicsha, #instCpc, #instIsha, #instCshm, #instTete, #instHwahsing { opacity: 0.7; }
 
   /* 勾選後：各自彩色條 + 淡色背景 + 恢復不透明 */
   #instTicsha.checked { border-left: 5px solid #3182CE; background: #EBF8FF; opacity: 1; }
@@ -3391,6 +3558,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   #instIsha.checked   { border-left: 5px solid #D69E2E; background: #FEFCBF; opacity: 1; }
   #instCshm.checked   { border-left: 5px solid #805AD5; background: #FAF5FF; opacity: 1; }
   #instTete.checked   { border-left: 5px solid #E53E3E; background: #FFF5F5; opacity: 1; }
+  #instHwahsing.checked { border-left: 5px solid #319795; background: #E6FFFA; opacity: 1; }
   
   /* === Inputs === */
   input[type=text], input[type=number], select {
@@ -3627,6 +3795,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <option value="中華民國工業安全衛生協會">中華民國工業安全衛生協會 (ISHA)</option>
         <option value="中國勞工安全衛生管理學會">中國勞工安全衛生管理學會 (CSHM)</option>
         <option value="台灣能量輻射防護偵測有限公司">台灣能量輻射防護偵測有限公司 (TETE)</option>
+        <option value="華新輻射防護偵測股份有限公司">華新輻射防護偵測股份有限公司 (華新)</option>
       </select>
       <select id="filterBranch" onchange="renderTable()" style="display:none;"><option value="">全部分會</option></select>
       <div id="branchMultiBox" style="position:relative;z-index:300;">
