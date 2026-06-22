@@ -4364,9 +4364,9 @@ function renderTable() {
       );
     }
   if (nat) visible = visible.filter(c => c.nationality === nat);
-  if (stat === 'open') visible = visible.filter(c => /確定開班|招生|強力/.test(c.status));
-  if (stat === 'full') visible = visible.filter(c => /額滿/.test(c.status));
-  if (cls) visible = visible.filter(c => c.class_type.includes(cls));
+  if (stat === 'open') visible = visible.filter(c => !c.status || /確定開班|招生|強力/.test(c.status));
+  if (stat === 'full') visible = visible.filter(c => !c.status || /額滿/.test(c.status));
+  if (cls) visible = visible.filter(c => !c.class_type || c.class_type.includes(cls));
 
   // 按開課日升冪排序 (近的在前)
   visible.sort((a, b) => (a.start_date || '9999').localeCompare(b.start_date || '9999'));
