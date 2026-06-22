@@ -1848,24 +1848,6 @@ class TeteScraper:
                 soup = BeautifulSoup(r.text, "html.parser")
                 full_text = soup.get_text(separator="\n")
 
-                # 解析日期（從標題文字，如「115年06月26日」）
-                date_match = re.search(r'(\d{2,3})年(\d{2})月(\d{2})日', title_text)
-                if date_match:
-                    year = int(date_match.group(1)) + 1911
-                    month = date_match.group(2)
-                    day = date_match.group(3)
-                    start_date = f"{year}-{month}-{day}"
-                else:
-                    start_date = ""
-
-                # 結束日期（多日課程，如「06月22日~23日」）
-                end_match = re.search(r'~(\d{2})日', title_text)
-                if end_match and date_match:
-                    end_day = end_match.group(1).zfill(2)
-                    end_date = f"{year}-{month}-{end_day}"
-                else:
-                    end_date = start_date
-
                 # 地點（從「上課地點：」後抓第一行地址）
                 loc_match = re.search(r'上課地點[：:]\s*\n?\s*(.+)', full_text)
                 location = loc_match.group(1).strip() if loc_match else ""
@@ -1878,31 +1860,81 @@ class TeteScraper:
                 else:
                     branch = "北部"
 
-                # 費用（取第一個數字）
-                fee_match = re.search(r'每人(\d+)元', full_text)
-                fee = int(fee_match.group(1)) if fee_match else 0
+                # 費用：一般場次 + 全日班（全日班通常為兩倍）
+                fee_match = re.search(r'每人\s*(\d+)\s*元', full_text)
+                base_fee = int(fee_match.group(1)) if fee_match else 0
+                fullday_match = re.search(r'全日班\D*?(\d+)\s*元', full_text)
+                fullday_fee = int(fullday_match.group(1)) if fullday_match else base_fee
+
+                # 從報名「班次」區塊抓出所有場次（上午班 / 下午班 / 全日班）
+                block_m = re.search(r'班次(.*?)姓名', full_text, re.DOTALL)
+                block = block_m.group(1) if block_m else ""
+                session_re = re.compile(
+                    r'(\d{2,3})年(\d{1,2})月(\d{1,2})日'
+                    r'(?:\s*星期[一二三四五六日])?'
+                    r'\s*(?:\(([^)]*)\))?'
+                    r'\s*(上午班|下午班|全日班|全天班)?'
+                )
+                sessions = session_re.findall(block)
+
+                # 標題日期（沒抓到班次時的 fallback，含多日範圍）
+                date_match = re.search(r'(\d{2,3})年(\d{2})月(\d{2})日', title_text)
+                if date_match:
+                    t_year = int(date_match.group(1)) + 1911
+                    t_month, t_day = date_match.group(2), date_match.group(3)
+                    title_start = f"{t_year}-{t_month}-{t_day}"
+                else:
+                    title_start = ""
+                end_match = re.search(r'~(\d{2})日', title_text)
+                title_end = f"{t_year}-{t_month}-{end_match.group(1).zfill(2)}" if (end_match and date_match) else title_start
+
+                if not sessions:
+                    sessions = [(None, None, None, "", "")]
 
                 course_id = detail_url.split("_")[-1].replace(".html", "")
+                seen_sess = set()
+                for (sy, sm, sd_, _loc_hint, sess) in sessions:
+                    if sy:
+                        start_date = f"{int(sy)+1911:04d}-{int(sm):02d}-{int(sd_):02d}"
+                        end_date = start_date
+                        if title_end != title_start and start_date == title_start:
+                            end_date = title_end
+                    else:
+                        start_date, end_date = title_start, title_end
 
-                courses.append({
-                    "institute": cls.name,
-                    "id": f"tete_{course_id}",
-                    "code": cls.code,
-                    "name": course_name,
-                    "branch": branch,
-                    "category": "輻射",
-                    "nationality": "本國籍",
-                    "start_date": start_date,
-                    "end_date": end_date,
-                    "class_type": "",
-                    "class_time": "上午班(時間待通知)",
-                    "hours": hours,
-                    "fee": fee,
-                    "status": "確定開班",
-                    "register_url": detail_url,
-                    "location": location,
-                    "source": list_url if "54564" in detail_url or "54566" in detail_url or "54991" in detail_url else detail_url,
-                })
+                    if sess == "全日班":
+                        class_time, this_fee = "全日班", fullday_fee
+                        this_hours = hours * 2 if hours == 3 else hours
+                    elif sess:
+                        class_time, this_fee, this_hours = sess, base_fee, hours
+                    else:
+                        class_time, this_fee, this_hours = "時間以協會通知為準", base_fee, hours
+
+                    dedup_key = f"{start_date}|{sess}"
+                    if dedup_key in seen_sess:
+                        continue
+                    seen_sess.add(dedup_key)
+
+                    sess_tag = {"上午班": "am", "下午班": "pm", "全日班": "full"}.get(sess, "x")
+                    courses.append({
+                        "institute": cls.name,
+                        "id": f"tete_{course_id}_{sess_tag}",
+                        "code": cls.code,
+                        "name": course_name,
+                        "branch": branch,
+                        "category": "輻射",
+                        "nationality": "本國籍",
+                        "start_date": start_date,
+                        "end_date": end_date,
+                        "class_type": "",
+                        "class_time": class_time,
+                        "hours": this_hours,
+                        "fee": this_fee,
+                        "status": "確定開班",
+                        "register_url": detail_url,
+                        "location": location,
+                        "source": detail_url,
+                    })
             except Exception as e:
                 print(f"[TeteScraper] 詳細頁失敗 {detail_url}: {e}")
             cls._progress["current"] += 1
