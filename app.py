@@ -2378,6 +2378,13 @@ def api_scrapers():
             "desc": getattr(cls, "desc", ""),
             "last_updated": scraper_updated.get(code, ""),
         })
+    result.append({
+        "code": "hwahsing",
+        "name": "華新輻射防護偵測股份有限公司",
+        "desc": "北部地區（台北・桃園・竹科），輻射類課程",
+        "last_updated": scraper_updated.get("hwahsing", ""),
+        "manual": True,
+    })
     return jsonify(result)
 
 @app.route("/api/online")
@@ -3072,7 +3079,7 @@ input:focus { outline: none; border-color: #4A90D9; box-shadow: 0 0 0 3px rgba(7
   <div class="card">
     <h2>📥 華新課程匯入（手動貼上）</h2>
     <div style="background:#FFF3CD;border:1.5px solid #F4B860;border-radius:10px;padding:12px 16px;font-size:13px;color:#856404;line-height:1.7;margin-bottom:16px;">
-      華新網站會擋海外伺服器，無法自動抓取。請從<b>台灣的瀏覽器</b>打開下面三頁，各按 <b>Ctrl+A → Ctrl+C</b> 複製整頁，貼到對應欄位後按「匯入」。<br>
+      華新網站會擋海外伺服器，無法自動抓取。請從<b>台灣的瀏覽器</b>打開下面三頁，在每一頁按 <b>Ctrl+U</b>（檢視原始碼）→ 接著 <b>Ctrl+A → Ctrl+C</b> 複製，貼到對應欄位後按「匯入」。<span style="color:#C0392B;font-weight:700;">（貼進去要是一堆 &lt;tag&gt; 程式碼，不是一行網址）</span><br>
       只更新某一頁時，<b>只貼那一頁即可</b>（沒貼的欄位會保留原本資料）。約一個月貼一次。
     </div>
     <div style="margin-bottom:14px;">
@@ -4056,6 +4063,18 @@ async function loadScrapers() {
     const scrapers = await resp.json();
     const container = document.getElementById('instCardContainer');
     container.innerHTML = scrapers.map(s => {
+      if (s.manual) {
+        const lastUp = s.last_updated ? s.last_updated.slice(0,16) : '尚未匯入';
+        return `
+          <div class="inst-card" id="instHwahsingInfo" style="cursor:default;border-left:5px solid #319795;background:#E6FFFA;opacity:1;">
+            <div style="flex:1;">
+              <div class="label">${s.name}</div>
+              <div class="desc">${s.desc || ''}</div>
+              <div style="font-size:11px;margin-top:4px;color:#0E7C7B;font-weight:700;">🔒 此協會無法自動抓取，更新請通知管理員</div>
+              <div style="font-size:11px;margin-top:2px;color:#0E7C7B;">📥 管理員上次匯入：${lastUp}</div>
+            </div>
+          </div>`;
+      }
       const capCode = s.code.charAt(0).toUpperCase() + s.code.slice(1);
       const lastUp = s.last_updated ? s.last_updated.slice(0,16) : '尚未更新';
       const isOld = s.last_updated ? (Date.now() - new Date(s.last_updated).getTime() > 7*24*60*60*1000) : true;
