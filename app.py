@@ -3912,30 +3912,25 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           </div>
           <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="複訓" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> 複訓</label>
           <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="初訓" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> 初訓</label>
-          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="輻射" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> 輻射</label>
-          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="3小時" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 3小時積分班</label>
-          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="18小時" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 18小時訓練班</label>
-          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="36小時" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 36小時訓練班</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="輻射" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> 輻射(全部)</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="3小時" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 輻射3小時</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="18小時" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 輻射18小時</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="36小時" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 輻射36小時</label>
         </div>
       </div>
       <select id="filterNationality" onchange="renderTable()">
         <option value="">全部 (含外籍)</option>
-        <option value="本國籍">只要本國籍</option>
-        <option value="越南籍">只要越南籍</option>
-        <option value="印尼籍">只要印尼籍</option>
-        <option value="菲律賓籍">只要菲律賓籍</option>
-        <option value="泰國籍">只要泰國籍</option>
+        <option value="本國">只看本國籍</option>
+        <option value="外籍">只看外籍 (派訓外籍)</option>
+        <option value="未標註">未標註 (無法判斷)</option>
       </select>
       <select id="filterStatus" onchange="renderTable()">
         <option value="">全部狀態</option>
-        <option value="open">確定開班/招生中</option>
-        <option value="full">額滿</option>
+        <option value="open">可報名 (含候補)</option>
+        <option value="full">已額滿 (無候補)</option>
       </select>
       <select id="filterClass" onchange="renderTable()">
         <option value="">全部班別</option>
-        <option value="日">日間班</option>
-        <option value="夜">夜間班</option>
-        <option value="假">假日班</option>
       </select>
     </div>
     <div class="stat">
@@ -4104,6 +4099,7 @@ async function loadCourses() {
     allCourses = data.courses || [];
     document.getElementById('lastUpdate').textContent = data.last_updated ? '上次更新: ' + data.last_updated : '尚未抓取';
     populateBranches();
+    populateClassTypes();
     renderTable();
   } catch (e) { console.error(e); }
 }
@@ -4132,6 +4128,17 @@ function populateBranches() {
     ${opts}
   `;
   updateBranchButtonText();
+}
+
+function populateClassTypes() {
+  const sel = document.getElementById('filterClass');
+  const cur = sel.value;
+  const types = [...new Set(allCourses.map(c => (c.class_type || '').trim()).filter(Boolean))].sort();
+  let html = '<option value="">全部班別</option>';
+  types.forEach(t => { html += `<option value="${t}">${t}</option>`; });
+  html += '<option value="__blank__">(未標註)</option>';
+  sel.innerHTML = html;
+  if (cur) sel.value = cur;
 }
 
 function toggleCategoryDropdown() {
@@ -4363,10 +4370,13 @@ function renderTable() {
         selectedCategories.some(sel => c.category === sel || (c.name && c.name.includes(sel)))
       );
     }
-  if (nat) visible = visible.filter(c => c.nationality === nat);
-  if (stat === 'open') visible = visible.filter(c => !c.status || /確定開班|招生|強力/.test(c.status));
-  if (stat === 'full') visible = visible.filter(c => !c.status || /額滿/.test(c.status));
-  if (cls) visible = visible.filter(c => !c.class_type || c.class_type.includes(cls));
+  if (nat === '本國') visible = visible.filter(c => /本國/.test(c.nationality || ''));
+  else if (nat === '外籍') visible = visible.filter(c => /外|越|印|菲|泰/.test(c.nationality || ''));
+  else if (nat === '未標註') visible = visible.filter(c => !c.nationality);
+  if (stat === 'open') visible = visible.filter(c => { const s = c.status || ''; if (!s) return true; if (/截止|結訓|停辦|取消|結束/.test(s)) return false; if (/額滿/.test(s) && !/候補/.test(s)) return false; return true; });
+  if (stat === 'full') visible = visible.filter(c => /額滿/.test(c.status || '') && !/候補/.test(c.status || ''));
+  if (cls === '__blank__') visible = visible.filter(c => !(c.class_type || '').trim());
+  else if (cls) visible = visible.filter(c => (c.class_type || '').trim() === cls);
 
   // 按開課日升冪排序 (近的在前)
   visible.sort((a, b) => (a.start_date || '9999').localeCompare(b.start_date || '9999'));
