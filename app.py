@@ -3891,15 +3891,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <option value="華新輻射防護偵測股份有限公司">華新輻射防護偵測股份有限公司 (華新)</option>
       </select>
       <select id="filterBranch" onchange="renderTable()" style="display:none;"><option value="">全部分會</option></select>
-      <div id="branchMultiBox" style="position:relative;z-index:300;">
-        <button type="button" onclick="toggleBranchDropdown()" id="branchToggleBtn"
-                style="width:100%;padding:10px 14px;border:2px solid #B8CCE4;border-radius:10px;background:white;color:#0F1F2E;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
-          📍 全部分會
-        </button>
-        <div id="branchDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:2px solid var(--teal);border-radius:10px;margin-top:4px;padding:10px;z-index:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);max-height:240px;overflow-y:auto;">
-          <div id="branchOptions"></div>
-        </div>
-      </div>
+
       <div id="categoryMultiBox" style="position:relative;z-index:300;">
         <button type="button" onclick="toggleCategoryDropdown()" id="categoryToggleBtn"
                 style="width:100%;padding:10px 14px;border:2px solid #B8CCE4;border-radius:10px;background:white;color:#0F1F2E;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
@@ -3929,14 +3921,29 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <option value="open">可報名 (含候補)</option>
         <option value="full">已額滿 (無候補)</option>
       </select>
-      <div id="classMultiBox" style="position:relative;z-index:300;">
-        <button type="button" onclick="toggleClassDropdown()" id="classToggleBtn"
-                style="width:100%;padding:10px 14px;border:2px solid #B8CCE4;border-radius:10px;background:white;color:#0F1F2E;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
-          🕒 全部班別
-        </button>
-        <div id="classDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:2px solid var(--teal);border-radius:10px;margin-top:4px;padding:10px;z-index:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);max-height:240px;overflow-y:auto;">
-          <div id="classOptions"></div>
-        </div>
+
+    </div>
+    <style>
+      .chip-filter{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+      .chip-label{font-size:13px;font-weight:700;color:var(--ink-soft);padding-top:6px;white-space:nowrap;min-width:54px;}
+      .chip-row{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
+      .chip{padding:5px 13px;border-radius:16px;border:1.5px solid #B8CCE4;background:white;color:#33546e;font-size:13px;cursor:pointer;font-family:inherit;transition:all .12s;}
+      .chip:hover{border-color:var(--teal);}
+      .chip.on{background:var(--teal);border-color:var(--teal);color:white;font-weight:700;}
+      .chip-mini{font-size:11px;color:var(--teal);background:none;border:none;cursor:pointer;padding:4px;text-decoration:underline;align-self:center;}
+    </style>
+    <div style="background:#F5F9FD;border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+      <div class="chip-filter">
+        <span class="chip-label">📍 分會</span>
+        <div id="branchChips" class="chip-row"></div>
+        <button class="chip-mini" onclick="selectAllBranchChips(true)">全選</button>
+        <button class="chip-mini" onclick="selectAllBranchChips(false)">清除</button>
+      </div>
+      <div class="chip-filter" style="margin-bottom:0;">
+        <span class="chip-label">🕒 班別</span>
+        <div id="classChips" class="chip-row"></div>
+        <button class="chip-mini" onclick="selectAllClassChips(true)">全選</button>
+        <button class="chip-mini" onclick="selectAllClassChips(false)">清除</button>
       </div>
     </div>
     <div class="stat">
@@ -4113,27 +4120,24 @@ async function loadCourses() {
 let selectedBranches = new Set();  // 已選的分會
 
 function populateBranches() {
-  const branches = [...new Set(allCourses.map(c => c.branch))].sort();
-  // 預設全選
-  if (selectedBranches.size === 0) {
-    branches.forEach(b => selectedBranches.add(b));
-  }
-  const opts = branches.map(b => `
-    <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" 
-           onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">
-      <input type="checkbox" value="${b}" ${selectedBranches.has(b)?'checked':''} 
-             onchange="onBranchCheck(this)" style="width:18px;height:18px;cursor:pointer;">
-      <span style="font-size:14px;">${b}</span>
-    </label>
-  `).join('');
-  document.getElementById('branchOptions').innerHTML = `
-    <div style="border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:6px;display:flex;gap:6px;">
-      <button onclick="selectAllBranches()" style="flex:1;background:var(--teal);color:white;border:none;padding:5px;border-radius:5px;cursor:pointer;font-size:12px;">全選</button>
-      <button onclick="clearAllBranches()" style="flex:1;background:#ccc;color:white;border:none;padding:5px;border-radius:5px;cursor:pointer;font-size:12px;">清除</button>
-    </div>
-    ${opts}
-  `;
-  updateBranchButtonText();
+  const branches = [...new Set(allCourses.map(c => c.branch).filter(b => b !== undefined && b !== null))].sort();
+  if (selectedBranches.size === 0) branches.forEach(b => selectedBranches.add(b));
+  document.getElementById('branchChips').innerHTML = branches.map(b => {
+    const label = (b === '' || b == null) ? '(未分類)' : b;
+    return `<button class="chip ${selectedBranches.has(b)?'on':''}" onclick="toggleBranchChip('${(b||'').replace(/'/g,"\\'")}')">${label}</button>`;
+  }).join('');
+}
+
+function toggleBranchChip(b) {
+  if (selectedBranches.has(b)) selectedBranches.delete(b);
+  else selectedBranches.add(b);
+  populateBranches(); renderTable();
+}
+
+function selectAllBranchChips(on) {
+  selectedBranches.clear();
+  if (on) [...new Set(allCourses.map(c => c.branch))].forEach(b => selectedBranches.add(b));
+  populateBranches(); renderTable();
 }
 
 let selectedClasses = new Set();
@@ -4141,23 +4145,22 @@ let selectedClasses = new Set();
 function populateClasses() {
   const raw = [...new Set(allCourses.map(c => (c.class_type || '').trim() || '__blank__'))].sort();
   if (selectedClasses.size === 0) raw.forEach(t => selectedClasses.add(t));
-  const opts = raw.map(t => {
+  document.getElementById('classChips').innerHTML = raw.map(t => {
     const label = t === '__blank__' ? '(未標註)' : t;
-    return `
-    <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;"
-           onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">
-      <input type="checkbox" value="${t}" ${selectedClasses.has(t)?'checked':''}
-             onchange="onClassCheck(this)" style="width:18px;height:18px;cursor:pointer;">
-      <span style="font-size:14px;">${label}</span>
-    </label>`;
+    return `<button class="chip ${selectedClasses.has(t)?'on':''}" onclick="toggleClassChip('${t}')">${label}</button>`;
   }).join('');
-  document.getElementById('classOptions').innerHTML = `
-    <div style="border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:6px;display:flex;gap:6px;">
-      <button onclick="selectAllClasses()" style="flex:1;background:var(--teal);color:white;border:none;padding:5px;border-radius:5px;cursor:pointer;font-size:12px;">全選</button>
-      <button onclick="clearAllClasses()" style="flex:1;background:#ccc;color:white;border:none;padding:5px;border-radius:5px;cursor:pointer;font-size:12px;">清除</button>
-    </div>
-    ${opts}`;
-  updateClassButtonText();
+}
+
+function toggleClassChip(t) {
+  if (selectedClasses.has(t)) selectedClasses.delete(t);
+  else selectedClasses.add(t);
+  populateClasses(); renderTable();
+}
+
+function selectAllClassChips(on) {
+  selectedClasses.clear();
+  if (on) [...new Set(allCourses.map(c => (c.class_type || '').trim() || '__blank__'))].forEach(t => selectedClasses.add(t));
+  populateClasses(); renderTable();
 }
 
 function toggleClassDropdown() {
