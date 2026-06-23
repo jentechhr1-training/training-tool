@@ -3927,9 +3927,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       .chip-filter{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
       .chip-label{font-size:13px;font-weight:700;color:var(--ink-soft);padding-top:6px;white-space:nowrap;min-width:54px;}
       .chip-row{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
-      .chip{padding:5px 13px;border-radius:16px;border:1.5px solid #B8CCE4;background:white;color:#33546e;font-size:13px;cursor:pointer;font-family:inherit;transition:all .12s;}
-      .chip:hover{border-color:var(--teal);}
-      .chip.on{background:var(--teal);border-color:var(--teal);color:white;font-weight:700;}
+      .chip{padding:7px 16px;border-radius:18px;border:1.5px solid #B8CCE4;background:white;color:#33546e;font-size:14px;cursor:pointer;font-family:inherit;transition:all .12s;}
+      .chip:hover{border-color:#319795;}
+      .chip.on{background:#319795;border-color:#319795;color:white;font-weight:700;}
       .chip-mini{font-size:11px;color:var(--teal);background:none;border:none;cursor:pointer;padding:4px;text-decoration:underline;align-self:center;}
     </style>
     <div style="background:#F5F9FD;border-radius:12px;padding:12px 14px;margin-bottom:14px;">
@@ -4119,12 +4119,15 @@ async function loadCourses() {
 
 let selectedBranches = new Set();  // 已選的分會
 
+let branchInit = false;
 function populateBranches() {
-  const branches = [...new Set(allCourses.map(c => c.branch).filter(b => b !== undefined && b !== null))].sort();
-  if (selectedBranches.size === 0) branches.forEach(b => selectedBranches.add(b));
-  document.getElementById('branchChips').innerHTML = branches.map(b => {
-    const label = (b === '' || b == null) ? '(未分類)' : b;
-    return `<button class="chip ${selectedBranches.has(b)?'on':''}" onclick="toggleBranchChip('${(b||'').replace(/'/g,"\\'")}')">${label}</button>`;
+  const all = [...new Set(allCourses.map(c => c.branch == null ? '' : c.branch))];
+  const real = all.filter(b => b !== '').sort();
+  const list = all.includes('') ? [...real, ''] : real;
+  if (!branchInit) { list.forEach(b => selectedBranches.add(b)); branchInit = true; }
+  document.getElementById('branchChips').innerHTML = list.map(b => {
+    const label = b === '' ? '(未分類)' : b;
+    return `<button class="chip ${selectedBranches.has(b)?'on':''}" onclick="toggleBranchChip('${b.replace(/'/g,"\\'")}')">${label}</button>`;
   }).join('');
 }
 
@@ -4142,10 +4145,13 @@ function selectAllBranchChips(on) {
 
 let selectedClasses = new Set();
 
+let classInit = false;
 function populateClasses() {
-  const raw = [...new Set(allCourses.map(c => (c.class_type || '').trim() || '__blank__'))].sort();
-  if (selectedClasses.size === 0) raw.forEach(t => selectedClasses.add(t));
-  document.getElementById('classChips').innerHTML = raw.map(t => {
+  const real = [...new Set(allCourses.map(c => (c.class_type || '').trim()).filter(Boolean))].sort();
+  const hasBlank = allCourses.some(c => !(c.class_type || '').trim());
+  const list = hasBlank ? [...real, '__blank__'] : real;
+  if (!classInit) { list.forEach(t => selectedClasses.add(t)); classInit = true; }
+  document.getElementById('classChips').innerHTML = list.map(t => {
     const label = t === '__blank__' ? '(未標註)' : t;
     return `<button class="chip ${selectedClasses.has(t)?'on':''}" onclick="toggleClassChip('${t}')">${label}</button>`;
   }).join('');
