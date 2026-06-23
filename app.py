@@ -3863,15 +3863,26 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
   <!-- ① 抓取課程 -->
   <div class="card">
-    <h2>① 抓取課程資料</h2>
-    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:14px;">
-      <div id="instCardContainer" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;grid-column:1/-1;"></div>
-      </div>
-    <div style="background:#FFF3CD;border:2px solid #F4B860;border-radius:10px;padding:10px 16px;font-size:13px;color:#856404;line-height:1.6;margin-top:12px;">
-      ⚠️ <b>請分開更新</b>，依序按各協會的「🔄 只更新」按鈕
-      <span style="font-size:11px;opacity:0.8;margin-left:8px;">（同時更新多個協會會造成系統記憶體不足）</span>
+    <div onclick="toggleScrapeSection()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
+      <h2 style="margin:0;">① 抓取課程資料 <span style="font-size:13px;font-weight:400;color:#888;">（平常收合，要更新課程時再點開）</span></h2>
+      <span id="scrapeToggleIcon" style="font-size:14px;color:#319795;font-weight:700;white-space:nowrap;">▼ 展開</span>
     </div>
-    <div class="info-line" id="lastUpdate">尚未抓取</div>
+    <div id="scrapeBody" style="display:none;margin-top:14px;">
+      <style>
+        #instCardContainer .inst-card{padding:10px 12px!important;border-radius:10px!important;}
+        #instCardContainer .label{font-size:13.5px!important;}
+        #instCardContainer .desc{font-size:11px!important;line-height:1.4!important;}
+        #instCardContainer .inst-update-btn{padding:6px 10px!important;font-size:12px!important;}
+      </style>
+      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:14px;">
+        <div id="instCardContainer" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;grid-column:1/-1;"></div>
+      </div>
+      <div style="background:#FFF3CD;border:2px solid #F4B860;border-radius:10px;padding:10px 16px;font-size:13px;color:#856404;line-height:1.6;margin-top:12px;">
+        ⚠️ <b>請分開更新</b>，依序按各協會的「🔄 只更新」按鈕
+        <span style="font-size:11px;opacity:0.8;margin-left:8px;">（同時更新多個協會會造成系統記憶體不足）</span>
+      </div>
+      <div class="info-line" id="lastUpdate">尚未抓取</div>
+    </div>
     
     
   </div>
@@ -4062,6 +4073,14 @@ function toggleInst(code) {
   cb.checked = !cb.checked;
   const card = document.getElementById('inst' + code.charAt(0).toUpperCase() + code.slice(1));
   card.classList.toggle('checked', cb.checked);
+}
+
+function toggleScrapeSection() {
+  const b = document.getElementById('scrapeBody');
+  const ic = document.getElementById('scrapeToggleIcon');
+  const open = b.style.display === 'none';
+  b.style.display = open ? 'block' : 'none';
+  ic.textContent = open ? '▲ 收合' : '▼ 展開';
 }
 
 async function loadScrapers() {
