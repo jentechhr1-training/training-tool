@@ -3880,7 +3880,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <div class="card">
     <h2>② 篩選並挑選課程</h2>
     <div class="filter-bar">
-      <input type="text" id="searchKw" placeholder="🔍 搜尋課程名稱 (例: 粉塵, 堆高機)" oninput="renderTable()">
+      <input type="text" id="searchKw" placeholder="🔍 搜尋 (空格=都要 逗號=任一，例: 越南 堆高機)" oninput="renderTable()">
       <select id="filterInstitute" onchange="renderTable()">
         <option value="">全部主辦單位</option>
         <option value="台灣省工商安全衛生協會">台灣省工商安全衛生協會</option>
@@ -4356,8 +4356,11 @@ function renderTable() {
 
   let visible = allCourses;
   if (kw) {
-    const keywords = kw.split(/[,，]/).map(k => k.trim()).filter(Boolean);
-    visible = visible.filter(c => keywords.some(k => c.name.toLowerCase().includes(k)));
+    const groups = kw.split(/[,，]/).map(g => g.trim().split(/\s+/).filter(Boolean)).filter(g => g.length);
+    visible = visible.filter(c => {
+      const h = `${c.name||''} ${c.nationality||''} ${c.category||''} ${c.branch||''} ${c.institute||''} ${c.class_type||''}`.toLowerCase();
+      return groups.some(group => group.every(term => h.includes(term)));
+    });
   }
   if (institute) visible = visible.filter(c => c.institute === institute);
   if (selectedBranches.size > 0) {
@@ -4367,7 +4370,7 @@ function renderTable() {
   }
   if (selectedCategories.length > 0) {
       visible = visible.filter(c => 
-        selectedCategories.some(sel => c.category === sel || (c.name && c.name.includes(sel)))
+        selectedCategories.some(sel => /^\d+小時$/.test(sel) ? (c.category === '輻射' && (c.name || '').includes(sel)) : (c.category === sel))
       );
     }
   if (nat === '本國') visible = visible.filter(c => /本國/.test(c.nationality || ''));
