@@ -3929,9 +3929,15 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <option value="open">可報名 (含候補)</option>
         <option value="full">已額滿 (無候補)</option>
       </select>
-      <select id="filterClass" onchange="renderTable()">
-        <option value="">全部班別</option>
-      </select>
+      <div id="classMultiBox" style="position:relative;z-index:300;">
+        <button type="button" onclick="toggleClassDropdown()" id="classToggleBtn"
+                style="width:100%;padding:10px 14px;border:2px solid #B8CCE4;border-radius:10px;background:white;color:#0F1F2E;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
+          🕒 全部班別
+        </button>
+        <div id="classDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:2px solid var(--teal);border-radius:10px;margin-top:4px;padding:10px;z-index:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);max-height:240px;overflow-y:auto;">
+          <div id="classOptions"></div>
+        </div>
+      </div>
     </div>
     <div class="stat">
       共 <strong id="totalCount">0</strong> 筆,目前顯示 <strong id="visCount">0</strong> 筆,已選擇 <strong id="selCount">0</strong> 筆
@@ -4099,7 +4105,7 @@ async function loadCourses() {
     allCourses = data.courses || [];
     document.getElementById('lastUpdate').textContent = data.last_updated ? '上次更新: ' + data.last_updated : '尚未抓取';
     populateBranches();
-    populateClassTypes();
+    populateClasses();
     renderTable();
   } catch (e) { console.error(e); }
 }
@@ -4130,15 +4136,62 @@ function populateBranches() {
   updateBranchButtonText();
 }
 
-function populateClassTypes() {
-  const sel = document.getElementById('filterClass');
-  const cur = sel.value;
-  const types = [...new Set(allCourses.map(c => (c.class_type || '').trim()).filter(Boolean))].sort();
-  let html = '<option value="">全部班別</option>';
-  types.forEach(t => { html += `<option value="${t}">${t}</option>`; });
-  html += '<option value="__blank__">(未標註)</option>';
-  sel.innerHTML = html;
-  if (cur) sel.value = cur;
+let selectedClasses = new Set();
+
+function populateClasses() {
+  const raw = [...new Set(allCourses.map(c => (c.class_type || '').trim() || '__blank__'))].sort();
+  if (selectedClasses.size === 0) raw.forEach(t => selectedClasses.add(t));
+  const opts = raw.map(t => {
+    const label = t === '__blank__' ? '(未標註)' : t;
+    return `
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;"
+           onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''">
+      <input type="checkbox" value="${t}" ${selectedClasses.has(t)?'checked':''}
+             onchange="onClassCheck(this)" style="width:18px;height:18px;cursor:pointer;">
+      <span style="font-size:14px;">${label}</span>
+    </label>`;
+  }).join('');
+  document.getElementById('classOptions').innerHTML = `
+    <div style="border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:6px;display:flex;gap:6px;">
+      <button onclick="selectAllClasses()" style="flex:1;background:var(--teal);color:white;border:none;padding:5px;border-radius:5px;cursor:pointer;font-size:12px;">全選</button>
+      <button onclick="clearAllClasses()" style="flex:1;background:#ccc;color:white;border:none;padding:5px;border-radius:5px;cursor:pointer;font-size:12px;">清除</button>
+    </div>
+    ${opts}`;
+  updateClassButtonText();
+}
+
+function toggleClassDropdown() {
+  const d = document.getElementById('classDropdown');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+}
+
+function onClassCheck(cb) {
+  if (cb.checked) selectedClasses.add(cb.value);
+  else selectedClasses.delete(cb.value);
+  updateClassButtonText();
+  renderTable();
+}
+
+function selectAllClasses() {
+  document.querySelectorAll('#classOptions input[type=checkbox]').forEach(cb => {
+    cb.checked = true; selectedClasses.add(cb.value);
+  });
+  updateClassButtonText(); renderTable();
+}
+
+function clearAllClasses() {
+  document.querySelectorAll('#classOptions input[type=checkbox]').forEach(cb => { cb.checked = false; });
+  selectedClasses.clear();
+  updateClassButtonText(); renderTable();
+}
+
+function updateClassButtonText() {
+  const all = [...new Set(allCourses.map(c => (c.class_type || '').trim() || '__blank__'))];
+  const sel = [...selectedClasses];
+  const btn = document.getElementById('classToggleBtn');
+  if (sel.length === 0) btn.textContent = '🕒 (未選班別)';
+  else if (sel.length === all.length) btn.textContent = '🕒 全部班別';
+  else btn.textContent = '🕒 ' + sel.map(t => t === '__blank__' ? '未標註' : t).join(', ');
 }
 
 function toggleCategoryDropdown() {
@@ -4218,6 +4271,10 @@ document.addEventListener('click', function(e) {
   const catBox = document.getElementById('categoryMultiBox');
   if (catBox && !catBox.contains(e.target)) {
     document.getElementById('categoryDropdown').style.display = 'none';
+  }
+  const clsBox = document.getElementById('classMultiBox');
+  if (clsBox && !clsBox.contains(e.target)) {
+    document.getElementById('classDropdown').style.display = 'none';
   }
 });
 
@@ -4352,7 +4409,7 @@ function renderTable() {
   const selectedCategories = [...document.querySelectorAll('#categoryDropdown input[type=checkbox]:checked')].map(el => el.value);
   const nat = document.getElementById('filterNationality').value;
   const stat = document.getElementById('filterStatus').value;
-  const cls = document.getElementById('filterClass').value;
+
 
   let visible = allCourses;
   if (kw) {
@@ -4378,8 +4435,11 @@ function renderTable() {
   else if (nat === '未標註') visible = visible.filter(c => !c.nationality);
   if (stat === 'open') visible = visible.filter(c => { const s = c.status || ''; if (!s) return true; if (/截止|結訓|停辦|取消|結束/.test(s)) return false; if (/額滿/.test(s) && !/候補/.test(s)) return false; return true; });
   if (stat === 'full') visible = visible.filter(c => /額滿/.test(c.status || '') && !/候補/.test(c.status || ''));
-  if (cls === '__blank__') visible = visible.filter(c => !(c.class_type || '').trim());
-  else if (cls) visible = visible.filter(c => (c.class_type || '').trim() === cls);
+  if (selectedClasses.size > 0) {
+    visible = visible.filter(c => selectedClasses.has((c.class_type || '').trim() || '__blank__'));
+  } else {
+    visible = [];
+  }
 
   // 按開課日升冪排序 (近的在前)
   visible.sort((a, b) => (a.start_date || '9999').localeCompare(b.start_date || '9999'));
