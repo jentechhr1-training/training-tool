@@ -3942,13 +3942,13 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <span class="chip-label">📍 分會</span>
         <div id="branchChips" class="chip-row"></div>
 
-        <button class="chip-mini" onclick="selectAllBranchChips(true)">清除</button>
+        <button class="chip-mini" onclick="clearBranchSel()">清除</button>
       </div>
       <div class="chip-filter">
         <span class="chip-label">🕒 班別</span>
         <div id="classChips" class="chip-row"></div>
 
-        <button class="chip-mini" onclick="selectAllClassChips(true)">清除</button>
+        <button class="chip-mini" onclick="clearClassSel()">清除</button>
       </div>
       <div class="chip-filter">
         <span class="chip-label">🌐 國籍</span>
@@ -4184,13 +4184,17 @@ function populateBranches() {
   const all = [...new Set(allCourses.map(c => c.branch == null ? '' : c.branch))];
   const real = all.filter(b => b !== '').sort();
   const list = all.includes('') ? [...real, ''] : real;
-  if (!branchInit) { list.forEach(b => selectedBranches.add(b)); branchInit = true; }
-  const _allOn = list.length > 0 && list.every(b => selectedBranches.has(b));
-  const _allChip = `<button class="chip ${_allOn?'on':''}" onclick="selectAllBranchChips(true)">全部</button>`;
+  const _allOn = selectedBranches.size === 0;
+  const _allChip = `<button class="chip ${_allOn?'on':''}" onclick="clearBranchSel()">全部</button>`;
   document.getElementById('branchChips').innerHTML = _allChip + list.map(b => {
     const label = b === '' ? '(未分類)' : b;
     return `<button class="chip ${selectedBranches.has(b)?'on':''}" onclick="toggleBranchChip('${b.replace(/'/g,"\\'")}')">${label}</button>`;
   }).join('');
+}
+
+function clearBranchSel() {
+  selectedBranches.clear();
+  populateBranches(); renderTable();
 }
 
 function toggleBranchChip(b) {
@@ -4212,13 +4216,17 @@ function populateClasses() {
   const real = [...new Set(allCourses.map(c => (c.class_type || '').trim()).filter(Boolean))].sort();
   const hasBlank = allCourses.some(c => !(c.class_type || '').trim());
   const list = hasBlank ? [...real, '__blank__'] : real;
-  if (!classInit) { list.forEach(t => selectedClasses.add(t)); classInit = true; }
-  const _allOn = list.length > 0 && list.every(t => selectedClasses.has(t));
-  const _allChip = `<button class="chip ${_allOn?'on':''}" onclick="selectAllClassChips(true)">全部</button>`;
+  const _allOn = selectedClasses.size === 0;
+  const _allChip = `<button class="chip ${_allOn?'on':''}" onclick="clearClassSel()">全部</button>`;
   document.getElementById('classChips').innerHTML = _allChip + list.map(t => {
     const label = t === '__blank__' ? '(未標註)' : t;
     return `<button class="chip ${selectedClasses.has(t)?'on':''}" onclick="toggleClassChip('${t}')">${label}</button>`;
   }).join('');
+}
+
+function clearClassSel() {
+  selectedClasses.clear();
+  populateClasses(); renderTable();
 }
 
 function toggleClassChip(t) {
