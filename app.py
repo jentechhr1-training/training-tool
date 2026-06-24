@@ -3937,7 +3937,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       .chip-filter{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
       .chip-label{font-size:13px;font-weight:700;color:var(--ink-soft);padding-top:6px;white-space:nowrap;min-width:54px;}
       .chip-row{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
-      .chip{padding:7px 16px;border-radius:18px;border:1.5px solid #B8CCE4;background:white;color:#33546e;font-size:14px;cursor:pointer;font-family:inherit;transition:all .12s;}
+      .chip{padding:8px 18px;border-radius:18px;border:1.5px solid #B8CCE4;background:white;color:#33546e;font-size:15px;cursor:pointer;font-family:inherit;transition:all .12s;}
       .chip:hover{border-color:#319795;}
       .chip.on{background:#319795;border-color:#319795;color:white;font-weight:700;}
       .chip-mini{font-size:13px;color:#319795;font-weight:700;background:none;border:none;cursor:pointer;padding:4px 6px;text-decoration:underline;align-self:center;}
