@@ -3867,7 +3867,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <div class="card">
     <div onclick="toggleScrapeSection()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
       <h2 style="margin:0;">① 抓取課程資料 <span style="font-size:13px;font-weight:400;color:#888;">（平常收合，要更新課程時再點開）</span></h2>
-      <span id="scrapeToggleIcon" style="font-size:14px;color:#319795;font-weight:700;white-space:nowrap;">▼ 展開</span>
+      <span id="scrapeToggleIcon" style="font-size:16px;color:#319795;font-weight:700;white-space:nowrap;">▼ 展開</span>
     </div>
     <div id="scrapeBody" style="display:none;margin-top:14px;">
       <style>
@@ -3943,7 +3943,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       .chip{padding:7px 16px;border-radius:18px;border:1.5px solid #B8CCE4;background:white;color:#33546e;font-size:14px;cursor:pointer;font-family:inherit;transition:all .12s;}
       .chip:hover{border-color:#319795;}
       .chip.on{background:#319795;border-color:#319795;color:white;font-weight:700;}
-      .chip-mini{font-size:11px;color:var(--teal);background:none;border:none;cursor:pointer;padding:4px;text-decoration:underline;align-self:center;}
+      .chip-mini{font-size:13px;color:#319795;font-weight:700;background:none;border:none;cursor:pointer;padding:4px 6px;text-decoration:underline;align-self:center;}
     </style>
     <div style="background:#F5F9FD;border-radius:12px;padding:12px 14px;margin-bottom:14px;">
       <div class="chip-filter">
@@ -4692,7 +4692,7 @@ function addEmployee(name = '', dept = '') {
   row.className = 'emp-row';
   row.style.cssText = 'display:flex;gap:6px;align-items:center;';
   row.innerHTML = `
-    <input type="text" class="emp-name-input" placeholder="姓名,例: 藍若僑" value="${escHtml(name)}" style="flex:1;">
+    <input type="text" class="emp-name-input" placeholder="姓名,例: 王小明" value="${escHtml(name)}" style="flex:1;">
     <input type="text" class="emp-dept-input" placeholder="部門,例: 訓練單位" value="${escHtml(dept)}" style="flex:1;">
     <button type="button" onclick="removeEmployee(this)" onmouseover="this.style.background='#C44569';this.style.color='white';" onmouseout="this.style.background='#FFE5E5';this.style.color='#C44569';" style="background:#FFE5E5;border:none;color:#C44569;width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:16px;font-weight:bold;flex-shrink:0;transition:all 0.2s;" title="刪除這位同仁">✕</button>
   `;
