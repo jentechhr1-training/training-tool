@@ -3676,7 +3676,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   /* === Table === */
   .filter-bar {
     display: grid;
-    grid-template-columns: 2.4fr 1fr 1fr;
+    grid-template-columns: 2.4fr 1fr;
     gap: 10px; margin-bottom: 16px;
     background: rgba(255,255,255,0.6);
     border-radius: 16px;
@@ -3902,7 +3902,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       </select>
       <select id="filterBranch" onchange="renderTable()" style="display:none;"><option value="">全部分會</option></select>
 
-      <div id="categoryMultiBox" style="position:relative;z-index:300;">
+      <div id="categoryMultiBox" style="display:none;">
         <button type="button" onclick="toggleCategoryDropdown()" id="categoryToggleBtn"
                 style="width:100%;padding:10px 14px;border:2px solid #B8CCE4;border-radius:10px;background:white;color:#0F1F2E;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
           🏷️ 全部類別
@@ -3933,6 +3933,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       .chip-mini{font-size:13px;color:#319795;font-weight:700;background:none;border:none;cursor:pointer;padding:4px 6px;text-decoration:underline;align-self:center;}
     </style>
     <div style="background:#F5F9FD;border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+      <div class="chip-filter">
+        <span class="chip-label">🏷️ 類別</span>
+        <div id="categoryChips" class="chip-row"></div>
+        <button class="chip-mini" onclick="setCategoryAll()">清除</button>
+      </div>
       <div class="chip-filter">
         <span class="chip-label">📍 分會</span>
         <div id="branchChips" class="chip-row"></div>
@@ -4162,6 +4167,7 @@ async function loadCourses() {
     const data = await resp.json();
     allCourses = data.courses || [];
     document.getElementById('lastUpdate').textContent = data.last_updated ? '上次更新: ' + data.last_updated : '尚未抓取';
+    renderCategoryChips();
     populateBranches();
     populateClasses();
     renderNatChips();
@@ -4489,10 +4495,30 @@ function renderStatChips() {
 }
 function setStatFilter(v) { statFilter = v; renderStatChips(); renderTable(); }
 
+let selectedCategories = new Set();
+const CAT_OPTIONS = [['複訓','複訓'],['初訓','初訓'],['輻射','輻射(全部)'],['3小時','↳ 輻射3小時'],['18小時','↳ 輻射18小時'],['36小時','↳ 輻射36小時']];
+function renderCategoryChips() {
+  const allOn = selectedCategories.size === 0;
+  let html = `<button class="chip ${allOn?'on':''}" onclick="setCategoryAll()">全部</button>`;
+  html += CAT_OPTIONS.map(([v, label]) =>
+    `<button class="chip ${selectedCategories.has(v)?'on':''}" onclick="toggleCategoryChip('${v}')">${label}</button>`
+  ).join('');
+  document.getElementById('categoryChips').innerHTML = html;
+}
+function toggleCategoryChip(v) {
+  if (selectedCategories.has(v)) selectedCategories.delete(v);
+  else selectedCategories.add(v);
+  renderCategoryChips(); renderTable();
+}
+function setCategoryAll() {
+  selectedCategories.clear();
+  renderCategoryChips(); renderTable();
+}
+
 function renderTable() {
   const kw = document.getElementById('searchKw').value.toLowerCase();
   const institute = document.getElementById('filterInstitute').value;
-  const selectedCategories = [...document.querySelectorAll('#categoryDropdown input[type=checkbox]:checked')].map(el => el.value);
+
   const nat = natFilter;
   const stat = statFilter;
 
@@ -4511,9 +4537,9 @@ function renderTable() {
   } else {
     visible = [];
   }
-  if (selectedCategories.length > 0) {
+  if (selectedCategories.size > 0) {
       visible = visible.filter(c => 
-        selectedCategories.some(sel => /^\d+小時$/.test(sel) ? (c.category === '輻射' && (c.name || '').includes(sel)) : (c.category === sel))
+        [...selectedCategories].some(sel => /^\d+小時$/.test(sel) ? (c.category === '輻射' && (c.name || '').includes(sel)) : (c.category === sel))
       );
     }
   if (nat === '本國') visible = visible.filter(c => /本國/.test(c.nationality || ''));
