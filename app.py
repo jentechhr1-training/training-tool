@@ -3861,6 +3861,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
 <div class="container">
 
+  <div id="overdueBanner" style="display:none;"></div>
+
   <!-- ① 抓取課程 -->
   <div class="card">
     <div onclick="toggleScrapeSection()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
@@ -4075,6 +4077,39 @@ function toggleInst(code) {
   card.classList.toggle('checked', cb.checked);
 }
 
+function checkOverdue() {
+  fetch('/api/scrapers').then(r => r.json()).then(scrapers => {
+    const DAY = 86400000;
+    const isOverdue = s => {
+      const limit = s.manual ? 30 : 14;
+      if (!s.last_updated) return true;
+      return (Date.now() - new Date(s.last_updated).getTime()) > limit * DAY;
+    };
+    scrapers.forEach(s => {
+      const cap = s.code.charAt(0).toUpperCase() + s.code.slice(1);
+      const el = document.getElementById(s.manual ? 'instHwahsingInfo' : 'inst' + cap);
+      if (el) {
+        if (isOverdue(s)) { el.style.boxShadow = 'inset 0 0 0 2px #E53E3E'; }
+        else { el.style.boxShadow = ''; }
+      }
+    });
+    const overdue = scrapers.filter(isOverdue);
+    const banner = document.getElementById('overdueBanner');
+    if (!banner) return;
+    if (overdue.length === 0 || sessionStorage.getItem('overdueDismissed') === '1') {
+      banner.style.display = 'none';
+      return;
+    }
+    const names = overdue.map(s => s.name + (s.manual ? '（需管理員匯入）' : '')).join('、');
+    banner.innerHTML =
+      '<div style="background:#FDECEA;border:1.5px solid #E53E3E;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;">' +
+        '<span style="font-size:13px;color:#B71C1C;line-height:1.6;flex:1;">⚠️ 有 <b>' + overdue.length + '</b> 個協會的課程資料較久未更新：<b>' + names + '</b>，建議盡快更新。</span>' +
+        '<button onclick="sessionStorage.setItem(\'overdueDismissed\',\'1\');document.getElementById(\'overdueBanner\').style.display=\'none\';" style="background:none;border:none;color:#B71C1C;cursor:pointer;font-size:13px;white-space:nowrap;">✕ 關閉</button>' +
+      '</div>';
+    banner.style.display = 'block';
+  }).catch(() => {});
+}
+
 function toggleScrapeSection() {
   const b = document.getElementById('scrapeBody');
   const ic = document.getElementById('scrapeToggleIcon');
@@ -4133,6 +4168,7 @@ async function loadCourses() {
     populateBranches();
     populateClasses();
     renderTable();
+    checkOverdue();
   } catch (e) { console.error(e); }
 }
 
