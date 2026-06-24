@@ -3676,7 +3676,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   /* === Table === */
   .filter-bar {
     display: grid;
-    grid-template-columns: 2fr 1.5fr 1fr 1fr;
+    grid-template-columns: 2.4fr 1fr 1fr;
     gap: 10px; margin-bottom: 16px;
     background: rgba(255,255,255,0.6);
     border-radius: 16px;
