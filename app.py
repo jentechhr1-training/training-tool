@@ -3930,6 +3930,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       .chip{padding:8px 18px;border-radius:18px;border:1.5px solid #B8CCE4;background:white;color:#33546e;font-size:15px;cursor:pointer;font-family:inherit;transition:all .12s;}
       .chip:hover{border-color:#319795;}
       .chip.on{background:#319795;border-color:#319795;color:white;font-weight:700;}
+      .chip-all{min-width:72px;text-align:center;}
       .chip-all{min-width:64px;text-align:center;}
       .chip-mini{font-size:13px;color:#319795;font-weight:700;background:none;border:none;cursor:pointer;padding:4px 6px;text-decoration:underline;align-self:center;}
     </style>
@@ -4186,7 +4187,7 @@ function populateBranches() {
   const real = all.filter(b => b !== '').sort();
   const list = all.includes('') ? [...real, ''] : real;
   const _allOn = selectedBranches.size === 0;
-  const _allChip = `<button class="chip ${_allOn?'on':''}" onclick="clearBranchSel()">全部</button>`;
+  const _allChip = `<button class="chip chip-all ${_allOn?'on':''}" onclick="clearBranchSel()">全部</button>`;
   document.getElementById('branchChips').innerHTML = _allChip + list.map(b => {
     const label = b === '' ? '(未分類)' : b;
     return `<button class="chip ${selectedBranches.has(b)?'on':''}" onclick="toggleBranchChip('${b.replace(/'/g,"\\'")}')">${label}</button>`;
@@ -4218,7 +4219,7 @@ function populateClasses() {
   const hasBlank = allCourses.some(c => !(c.class_type || '').trim());
   const list = hasBlank ? [...real, '__blank__'] : real;
   const _allOn = selectedClasses.size === 0;
-  const _allChip = `<button class="chip ${_allOn?'on':''}" onclick="clearClassSel()">全部</button>`;
+  const _allChip = `<button class="chip chip-all ${_allOn?'on':''}" onclick="clearClassSel()">全部</button>`;
   document.getElementById('classChips').innerHTML = _allChip + list.map(t => {
     const label = t === '__blank__' ? '(未標註)' : t;
     return `<button class="chip ${selectedClasses.has(t)?'on':''}" onclick="toggleClassChip('${t}')">${label}</button>`;
@@ -4492,14 +4493,14 @@ const STAT_OPTIONS = [['', '全部'], ['open', '可報名(含候補)'], ['full',
 
 function renderNatChips() {
   document.getElementById('natChips').innerHTML = NAT_OPTIONS.map(([v, label]) =>
-    `<button class="chip ${natFilter === v ? 'on' : ''}" onclick="setNatFilter('${v}')">${label}</button>`
+    `<button class="chip ${v === '' ? 'chip-all' : ''} ${natFilter === v ? 'on' : ''}" onclick="setNatFilter('${v}')">${label}</button>`
   ).join('');
 }
 function setNatFilter(v) { natFilter = v; renderNatChips(); renderTable(); }
 
 function renderStatChips() {
   document.getElementById('statChips').innerHTML = STAT_OPTIONS.map(([v, label]) =>
-    `<button class="chip ${statFilter === v ? 'on' : ''}" onclick="setStatFilter('${v}')">${label}</button>`
+    `<button class="chip ${v === '' ? 'chip-all' : ''} ${statFilter === v ? 'on' : ''}" onclick="setStatFilter('${v}')">${label}</button>`
   ).join('');
 }
 function setStatFilter(v) { statFilter = v; renderStatChips(); renderTable(); }
@@ -4508,7 +4509,7 @@ let selectedCategories = new Set();
 const CAT_OPTIONS = [['複訓','複訓'],['初訓','初訓'],['輻射','輻射(全部)'],['3小時','↳ 輻射3小時'],['18小時','↳ 輻射18小時'],['36小時','↳ 輻射36小時']];
 function renderCategoryChips() {
   const allOn = selectedCategories.size === 0;
-  let html = `<button class="chip ${allOn?'on':''}" onclick="setCategoryAll()">全部</button>`;
+  let html = `<button class="chip chip-all ${allOn?'on':''}" onclick="setCategoryAll()">全部</button>`;
   html += CAT_OPTIONS.map(([v, label]) =>
     `<button class="chip ${selectedCategories.has(v)?'on':''}" onclick="toggleCategoryChip('${v}')">${label}</button>`
   ).join('');
