@@ -3511,10 +3511,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   body { 
     font-family: 'Microsoft JhengHei', sans-serif; 
     background: 
-      radial-gradient(ellipse at 20% 20%, rgba(147,210,240,0.5) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 80%, rgba(180,220,245,0.4) 0%, transparent 50%),
-      radial-gradient(ellipse at 60% 30%, rgba(200,230,250,0.3) 0%, transparent 40%),
-      linear-gradient(160deg, #DCF0FA 0%, #C8E0F0 50%, #D5EBF5 100%);
+      linear-gradient(160deg, #F7F9FB 0%, #EEF1F5 100%);
     color: var(--ink); min-height: 100vh; background-attachment: fixed; 
   }
   
@@ -3523,14 +3520,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     background: rgba(74,144,217,0.82);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    color: white; padding: 16px 32px;
+    color: white; padding: 9px 28px;
     display: flex; justify-content: space-between; align-items: center;
     box-shadow: 0 2px 16px rgba(26,95,168,0.2);
     position: sticky; top: 0; z-index: 100;
     border-bottom: 1px solid rgba(255,255,255,0.2);
   }
   .header-left h1 { 
-    font-size: 24px; font-weight: 800; color: white; 
+    font-size: 19px; font-weight: 800; color: white; 
     letter-spacing: 0.5px;
     text-shadow: 0 1px 3px rgba(0,0,0,0.15);
   }
