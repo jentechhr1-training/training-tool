@@ -3920,17 +3920,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="36小時" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 輻射36小時</label>
         </div>
       </div>
-      <select id="filterNationality" onchange="renderTable()">
-        <option value="">全部 (含外籍)</option>
-        <option value="本國">只看本國籍</option>
-        <option value="外籍">只看外籍 (派訓外籍)</option>
-        <option value="未標註">未標註 (無法判斷)</option>
-      </select>
-      <select id="filterStatus" onchange="renderTable()">
-        <option value="">全部狀態</option>
-        <option value="open">可報名 (含候補)</option>
-        <option value="full">已額滿 (無候補)</option>
-      </select>
+
 
     </div>
     <style>
@@ -3949,11 +3939,19 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <button class="chip-mini" onclick="selectAllBranchChips(true)">全選</button>
         <button class="chip-mini" onclick="selectAllBranchChips(false)">清除</button>
       </div>
-      <div class="chip-filter" style="margin-bottom:0;">
+      <div class="chip-filter">
         <span class="chip-label">🕒 班別</span>
         <div id="classChips" class="chip-row"></div>
         <button class="chip-mini" onclick="selectAllClassChips(true)">全選</button>
         <button class="chip-mini" onclick="selectAllClassChips(false)">清除</button>
+      </div>
+      <div class="chip-filter">
+        <span class="chip-label">🌐 國籍</span>
+        <div id="natChips" class="chip-row"></div>
+      </div>
+      <div class="chip-filter" style="margin-bottom:0;">
+        <span class="chip-label">📋 狀態</span>
+        <div id="statChips" class="chip-row"></div>
       </div>
     </div>
     <div class="stat">
@@ -4164,6 +4162,8 @@ async function loadCourses() {
     document.getElementById('lastUpdate').textContent = data.last_updated ? '上次更新: ' + data.last_updated : '尚未抓取';
     populateBranches();
     populateClasses();
+    renderNatChips();
+    renderStatChips();
     renderTable();
     checkOverdue();
   } catch (e) { console.error(e); }
@@ -4464,12 +4464,31 @@ function _normalizeHours(h) {
   return n % 1 === 0 ? String(Math.round(n)) : String(n);
 }
 
+let natFilter = '';
+let statFilter = '';
+const NAT_OPTIONS = [['', '全部'], ['本國', '只看本國籍'], ['外籍', '只看外籍'], ['未標註', '未標註']];
+const STAT_OPTIONS = [['', '全部狀態'], ['open', '可報名(含候補)'], ['full', '已額滿(無候補)']];
+
+function renderNatChips() {
+  document.getElementById('natChips').innerHTML = NAT_OPTIONS.map(([v, label]) =>
+    `<button class="chip ${natFilter === v ? 'on' : ''}" onclick="setNatFilter('${v}')">${label}</button>`
+  ).join('');
+}
+function setNatFilter(v) { natFilter = v; renderNatChips(); renderTable(); }
+
+function renderStatChips() {
+  document.getElementById('statChips').innerHTML = STAT_OPTIONS.map(([v, label]) =>
+    `<button class="chip ${statFilter === v ? 'on' : ''}" onclick="setStatFilter('${v}')">${label}</button>`
+  ).join('');
+}
+function setStatFilter(v) { statFilter = v; renderStatChips(); renderTable(); }
+
 function renderTable() {
   const kw = document.getElementById('searchKw').value.toLowerCase();
   const institute = document.getElementById('filterInstitute').value;
   const selectedCategories = [...document.querySelectorAll('#categoryDropdown input[type=checkbox]:checked')].map(el => el.value);
-  const nat = document.getElementById('filterNationality').value;
-  const stat = document.getElementById('filterStatus').value;
+  const nat = natFilter;
+  const stat = statFilter;
 
 
   let visible = allCourses;
