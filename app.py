@@ -4534,8 +4534,6 @@ function renderTable() {
   if (institute) visible = visible.filter(c => c.institute === institute);
   if (selectedBranches.size > 0) {
     visible = visible.filter(c => selectedBranches.has(c.branch));
-  } else {
-    visible = [];
   }
   if (selectedCategories.size > 0) {
       visible = visible.filter(c => 
@@ -4549,8 +4547,6 @@ function renderTable() {
   if (stat === 'full') visible = visible.filter(c => /額滿/.test(c.status || '') && !/候補/.test(c.status || ''));
   if (selectedClasses.size > 0) {
     visible = visible.filter(c => selectedClasses.has((c.class_type || '').trim() || '__blank__'));
-  } else {
-    visible = [];
   }
 
   // 按開課日升冪排序 (近的在前)
