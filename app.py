@@ -3930,6 +3930,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       .chip{padding:8px 18px;border-radius:18px;border:1.5px solid #B8CCE4;background:white;color:#33546e;font-size:15px;cursor:pointer;font-family:inherit;transition:all .12s;}
       .chip:hover{border-color:#319795;}
       .chip.on{background:#319795;border-color:#319795;color:white;font-weight:700;}
+      .chip-all{min-width:64px;text-align:center;}
       .chip-mini{font-size:13px;color:#319795;font-weight:700;background:none;border:none;cursor:pointer;padding:4px 6px;text-decoration:underline;align-self:center;}
     </style>
     <div style="background:#F5F9FD;border-radius:12px;padding:12px 14px;margin-bottom:14px;">
@@ -4487,7 +4488,7 @@ function _normalizeHours(h) {
 let natFilter = '';
 let statFilter = '';
 const NAT_OPTIONS = [['', '全部'], ['本國', '只看本國籍'], ['外籍', '只看外籍'], ['未標註', '未標註']];
-const STAT_OPTIONS = [['', '全部狀態'], ['open', '可報名(含候補)'], ['full', '已額滿(無候補)']];
+const STAT_OPTIONS = [['', '全部'], ['open', '可報名(含候補)'], ['full', '已額滿(無候補)']];
 
 function renderNatChips() {
   document.getElementById('natChips').innerHTML = NAT_OPTIONS.map(([v, label]) =>
