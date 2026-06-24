@@ -3942,13 +3942,13 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <span class="chip-label">📍 分會</span>
         <div id="branchChips" class="chip-row"></div>
 
-        <button class="chip-mini" onclick="selectAllBranchChips(false)">清除</button>
+        <button class="chip-mini" onclick="selectAllBranchChips(true)">清除</button>
       </div>
       <div class="chip-filter">
         <span class="chip-label">🕒 班別</span>
         <div id="classChips" class="chip-row"></div>
 
-        <button class="chip-mini" onclick="selectAllClassChips(false)">清除</button>
+        <button class="chip-mini" onclick="selectAllClassChips(true)">清除</button>
       </div>
       <div class="chip-filter">
         <span class="chip-label">🌐 國籍</span>
