@@ -3925,7 +3925,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     </div>
     <style>
       .chip-filter{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
-      .chip-label{font-size:13px;font-weight:700;color:var(--ink-soft);padding-top:6px;white-space:nowrap;min-width:54px;}
+      .chip-label{font-size:15px;font-weight:700;color:var(--ink-soft);padding-top:8px;white-space:nowrap;min-width:60px;}
       .chip-row{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
       .chip{padding:8px 18px;border-radius:18px;border:1.5px solid #B8CCE4;background:white;color:#33546e;font-size:15px;cursor:pointer;font-family:inherit;transition:all .12s;}
       .chip:hover{border-color:#319795;}
