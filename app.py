@@ -121,7 +121,7 @@ DB_FILE = APP_DIR / "users.db"
 PORT = 5000
 
 DEFAULT_USERS = [
-    {"username": "train0", "password": "HR123", "role": "admin", "display_name": "管理員"},
+    {"username": "train0", "password": "HR1234", "role": "admin", "display_name": "管理員"},
     {"username": "train1", "password": "1234",  "role": "user",  "display_name": "使用者1"},
     {"username": "train2", "password": "5678",  "role": "user",  "display_name": "使用者2"},
     {"username": "train3", "password": "6789",  "role": "user",  "display_name": "使用者3"},
